@@ -1,4 +1,4 @@
-package com.github.chirillkirkin.chichess.theme
+package com.github.chirillkirkin.chichess.core.designsystem.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme

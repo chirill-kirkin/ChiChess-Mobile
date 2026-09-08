@@ -31,3 +31,14 @@ plugins {
 
 rootProject.name = "ChiChess"
 include(":app")
+include(":core:domain")
+include(":core:data")
+include(":core:data:network")
+include(":core:data:database")
+include(":core:designsystem")
+include(":feature:home:domain")
+include(":feature:home:data")
+include(":feature:home:presentation")
+include(":feature:game:domain")
+include(":feature:game:data")
+include(":feature:game:presentation")

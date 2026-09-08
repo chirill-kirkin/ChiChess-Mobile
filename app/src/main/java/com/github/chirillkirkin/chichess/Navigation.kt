@@ -8,7 +8,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import com.github.chirillkirkin.chichess.ui.main.MainScreen
+import com.github.chirillkirkin.chichess.feature.home.presentation.MainScreen
 
 @Composable
 fun MainNavigation() {

@@ -1,4 +1,4 @@
-package com.github.chirillkirkin.chichess.theme
+package com.github.chirillkirkin.chichess.core.designsystem.theme
 
 import androidx.compose.ui.graphics.Color
 
