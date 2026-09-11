@@ -49,6 +49,7 @@ public fun <Message, State : Parcelable, Command> SavedStateHandle.mvuStore(
   initialCommands: (isStateRestored: Boolean) -> List<Command> = { emptyList() },
   subscriptions: List<Subscription<State, Message>> = emptyList(),
   concurrency: Int = DEFAULT_CONCURRENCY,
+  onCommandException: (command: Command, throwable: Throwable) -> Unit = { _, _ -> },
 ): SavedStateMVUStore<Message, State, Command> = createMVUStore(
   initialState = initialState,
   update = update,
@@ -59,6 +60,7 @@ public fun <Message, State : Parcelable, Command> SavedStateHandle.mvuStore(
   initialCommands = initialCommands,
   subscriptions = subscriptions,
   concurrency = concurrency,
+  onCommandException = onCommandException,
 )
 
 /**
@@ -77,6 +79,7 @@ public fun <Message, State : Any, SavedState : Any, Command> SavedStateHandle.mv
   initialCommands: (isStateRestored: Boolean) -> List<Command> = { emptyList() },
   subscriptions: List<Subscription<State, Message>> = emptyList(),
   concurrency: Int = DEFAULT_CONCURRENCY,
+  onCommandException: (command: Command, throwable: Throwable) -> Unit = { _, _ -> },
 ): SavedStateMVUStore<Message, State, Command> = createMVUStore(
   initialState = initialState,
   update = update,
@@ -87,6 +90,7 @@ public fun <Message, State : Any, SavedState : Any, Command> SavedStateHandle.mv
   initialCommands = initialCommands,
   subscriptions = subscriptions,
   concurrency = concurrency,
+  onCommandException = onCommandException,
 )
 
 private fun <Message, State : Any, SavedState : Any, Command> SavedStateHandle.createMVUStore(
@@ -99,6 +103,7 @@ private fun <Message, State : Any, SavedState : Any, Command> SavedStateHandle.c
   initialCommands: (isStateRestored: Boolean) -> List<Command>,
   subscriptions: List<Subscription<State, Message>>,
   concurrency: Int,
+  onCommandException: (command: Command, throwable: Throwable) -> Unit,
 ): SavedStateMVUStore<Message, State, Command> {
   val savedState = get<SavedState>(stateKey)
   val isStateRestored = savedState != null
@@ -110,6 +115,7 @@ private fun <Message, State : Any, SavedState : Any, Command> SavedStateHandle.c
     initialCommands = initialCommands(isStateRestored),
     subscriptions = subscriptions,
     concurrency = concurrency,
+    onCommandException = onCommandException,
   )
 
   return SavedStateMVUStore(

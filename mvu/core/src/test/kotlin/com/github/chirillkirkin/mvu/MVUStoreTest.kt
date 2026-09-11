@@ -2,9 +2,12 @@ package com.github.chirillkirkin.mvu
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.emptyFlow
@@ -108,6 +111,66 @@ internal class MVUStoreTest {
   }
 
   @Test
+  fun `executor failure does not stop subsequent commands`() = runTest {
+    val store = createStore(
+      commandExecutor = commandExecutorWithFailure(ExpectedCommandException()),
+    )
+
+    store.launchIn(backgroundScope)
+    store.send(Message.StartWork(listOf(FAILING_COMMAND_ID)))
+    runCurrent()
+
+    store.send(Message.StartWork(listOf(SUCCESSFUL_COMMAND_ID)))
+    runCurrent()
+
+    assertEquals(EXPECTED_COMPLETED_WORK_COUNT, store.state.value.workCompletedCount)
+  }
+
+  @Test
+  fun `executor failure is passed to exception callback`() = runTest {
+    val expectedException = ExpectedCommandException()
+    var failedCommand: Command? = null
+    var commandException: Throwable? = null
+    val store = createStore(
+      commandExecutor = commandExecutorWithFailure(expectedException),
+      onCommandException = { command, throwable ->
+        failedCommand = command
+        commandException = throwable
+      },
+    )
+
+    store.launchIn(backgroundScope)
+    store.send(Message.StartWork(listOf(FAILING_COMMAND_ID)))
+    runCurrent()
+
+    assertEquals(Command.Work(FAILING_COMMAND_ID), failedCommand)
+    assertSame(expectedException, commandException)
+  }
+
+  @Test
+  fun `cancelling command execution does not report an exception`() = runTest {
+    val ownerScope = CoroutineScope(SupervisorJob() + StandardTestDispatcher(testScheduler))
+    var commandException: Throwable? = null
+    val store = createStore(
+      commandExecutor = {
+        flow {
+          awaitCancellation()
+        }
+      },
+      onCommandException = { _, throwable -> commandException = throwable },
+    )
+
+    store.launchIn(ownerScope)
+    store.send(Message.StartWork(listOf(SUCCESSFUL_COMMAND_ID)))
+    runCurrent()
+
+    ownerScope.cancel()
+    runCurrent()
+
+    assertNull(commandException)
+  }
+
+  @Test
   fun `cancelling owner scope stops message processing`() = runTest {
     val ownerJob = SupervisorJob()
     val ownerScope = CoroutineScope(ownerJob + StandardTestDispatcher(testScheduler))
@@ -129,6 +192,7 @@ internal class MVUStoreTest {
     initialCommands: List<Command> = emptyList(),
     commandExecutor: CommandExecutor<Command, Message> = { emptyFlow() },
     concurrency: Int = 16,
+    onCommandException: (command: Command, throwable: Throwable) -> Unit = { _, _ -> },
   ): MVUStore<Message, State, Command> = MVUStore(
     initialState = State(),
     update = { message, state ->
@@ -141,7 +205,20 @@ internal class MVUStoreTest {
     commandExecutor = commandExecutor,
     initialCommands = initialCommands,
     concurrency = concurrency,
+    onCommandException = onCommandException,
   )
+
+  private fun commandExecutorWithFailure(
+    expectedException: ExpectedCommandException,
+  ): CommandExecutor<Command, Message> = { command ->
+    flow {
+      if (command.id == FAILING_COMMAND_ID) {
+        throw expectedException
+      }
+
+      emit(Message.Completed(command.id))
+    }
+  }
 
   private data class State(
     val total: Int = 0,
@@ -158,5 +235,13 @@ internal class MVUStoreTest {
     val id: Int
 
     data class Work(override val id: Int) : Command
+  }
+
+  private class ExpectedCommandException : RuntimeException()
+
+  private companion object {
+    const val FAILING_COMMAND_ID = 1
+    const val SUCCESSFUL_COMMAND_ID = 2
+    const val EXPECTED_COMPLETED_WORK_COUNT = 1
   }
 }
