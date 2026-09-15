@@ -5,3 +5,11 @@ plugins {
 kotlin {
   jvmToolchain(17)
 }
+
+dependencies {
+  testImplementation(libs.kotlin.test)
+}
+
+tasks.test {
+  useJUnitPlatform()
+}
