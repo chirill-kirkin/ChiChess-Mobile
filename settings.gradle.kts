@@ -22,6 +22,7 @@ dependencyResolutionManagement {
             }
         }
         mavenCentral()
+        maven(url = "https://jitpack.io")
     }
 }
 
@@ -42,5 +43,6 @@ include(":feature:home:domain")
 include(":feature:home:data")
 include(":feature:home:presentation")
 include(":feature:game:domain")
+include(":feature:game:engine")
 include(":feature:game:board")
 include(":feature:game:offline")
