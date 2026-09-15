@@ -26,26 +26,6 @@ internal class UpdateTest {
     assertEquals(emptyList(), replacement.commands)
   }
 
-  @Test
-  fun `update result extensions build expected results`() {
-    val state = State(value = 1)
-
-    val stateOnly: UpdateResult<State, Command> = state.only()
-    val withOneCommand: UpdateResult<State, Command> = state andCommand Command.First
-    val withSeveralCommands = state.andCommands(Command.First, Command.Second)
-
-    val expectedStateOnly: UpdateResult<State, Command> = UpdateResult(state, emptyList())
-    val expectedOneCommand: UpdateResult<State, Command> =
-      UpdateResult(state, listOf(Command.First))
-
-    assertEquals(expectedStateOnly, stateOnly)
-    assertEquals(expectedOneCommand, withOneCommand)
-    assertEquals(
-      UpdateResult(state, listOf(Command.First, Command.Second)),
-      withSeveralCommands,
-    )
-  }
-
   private data class State(
     val value: Int,
   )

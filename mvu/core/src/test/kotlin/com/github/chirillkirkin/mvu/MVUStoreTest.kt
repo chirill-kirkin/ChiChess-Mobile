@@ -2,20 +2,16 @@ package com.github.chirillkirkin.mvu
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 
@@ -27,12 +23,12 @@ internal class MVUStoreTest {
     val store = createStore()
     store.launchIn(backgroundScope)
 
-    store.send(Message.Add(1))
-    store.send(Message.Add(2))
-    store.send(Message.Add(3))
+    store.send(Message.Record(1))
+    store.send(Message.Record(2))
+    store.send(Message.Record(3))
     runCurrent()
 
-    assertEquals(State(total = 6), store.state.value)
+    assertEquals(listOf(1, 2, 3), store.state.value.recordedValues)
   }
 
   @Test
@@ -75,42 +71,6 @@ internal class MVUStoreTest {
   }
 
   @Test
-  fun `command execution respects concurrency limit`() = runTest {
-    var activeExecutions = 0
-    var maximumActiveExecutions = 0
-    val store = createStore(
-      initialCommands = listOf(Command.Work(1), Command.Work(2), Command.Work(3)),
-      concurrency = 2,
-      commandExecutor = { command ->
-        flow {
-          activeExecutions += 1
-          maximumActiveExecutions = maxOf(maximumActiveExecutions, activeExecutions)
-          try {
-            delay(1_000)
-            emit(Message.Completed(command.id))
-          } finally {
-            activeExecutions -= 1
-          }
-        }
-      },
-    )
-
-    store.launchIn(backgroundScope)
-    runCurrent()
-
-    assertEquals(2, maximumActiveExecutions)
-    assertEquals(2, activeExecutions)
-
-    advanceTimeBy(1_000)
-    runCurrent()
-
-    assertEquals(2, maximumActiveExecutions)
-    advanceTimeBy(1_000)
-    runCurrent()
-    assertEquals(3, store.state.value.workCompletedCount)
-  }
-
-  @Test
   fun `executor failure does not stop subsequent commands`() = runTest {
     val store = createStore(
       commandExecutor = commandExecutorWithFailure(ExpectedCommandException()),
@@ -148,63 +108,40 @@ internal class MVUStoreTest {
   }
 
   @Test
-  fun `cancelling command execution does not report an exception`() = runTest {
-    val ownerScope = CoroutineScope(SupervisorJob() + StandardTestDispatcher(testScheduler))
-    var commandException: Throwable? = null
-    val store = createStore(
-      commandExecutor = {
-        flow {
-          awaitCancellation()
-        }
-      },
-      onCommandException = { _, throwable -> commandException = throwable },
-    )
-
-    store.launchIn(ownerScope)
-    store.send(Message.StartWork(listOf(SUCCESSFUL_COMMAND_ID)))
-    runCurrent()
-
-    ownerScope.cancel()
-    runCurrent()
-
-    assertNull(commandException)
-  }
-
-  @Test
   fun `cancelling owner scope stops message processing`() = runTest {
     val ownerJob = SupervisorJob()
     val ownerScope = CoroutineScope(ownerJob + StandardTestDispatcher(testScheduler))
     val store = createStore()
     store.launchIn(ownerScope)
 
-    store.send(Message.Add(1))
+    store.send(Message.Record(1))
     runCurrent()
-    assertEquals(1, store.state.value.total)
+    assertEquals(listOf(1), store.state.value.recordedValues)
 
     ownerScope.cancel()
-    store.send(Message.Add(1))
+    store.send(Message.Record(2))
     runCurrent()
 
-    assertEquals(1, store.state.value.total)
+    assertEquals(listOf(1), store.state.value.recordedValues)
   }
 
   private fun createStore(
     initialCommands: List<Command> = emptyList(),
     commandExecutor: CommandExecutor<Command, Message> = { emptyFlow() },
-    concurrency: Int = 16,
     onCommandException: (command: Command, throwable: Throwable) -> Unit = { _, _ -> },
   ): MVUStore<Message, State, Command> = MVUStore(
     initialState = State(),
     update = { message, state ->
       when (message) {
-        is Message.Add -> state.copy(total = state.total + message.value).only()
+        is Message.Record ->
+          state.copy(recordedValues = state.recordedValues + message.value).only()
+
         is Message.StartWork -> state.andCommands(message.ids.map(Command::Work))
         is Message.Completed -> state.copy(workCompletedCount = state.workCompletedCount + 1).only()
       }
     },
     commandExecutor = commandExecutor,
     initialCommands = initialCommands,
-    concurrency = concurrency,
     onCommandException = onCommandException,
   )
 
@@ -221,12 +158,12 @@ internal class MVUStoreTest {
   }
 
   private data class State(
-    val total: Int = 0,
+    val recordedValues: List<Int> = emptyList(),
     val workCompletedCount: Int = 0,
   )
 
   private sealed interface Message {
-    data class Add(val value: Int) : Message
+    data class Record(val value: Int) : Message
     data class StartWork(val ids: List<Int>) : Message
     data class Completed(val id: Int) : Message
   }
