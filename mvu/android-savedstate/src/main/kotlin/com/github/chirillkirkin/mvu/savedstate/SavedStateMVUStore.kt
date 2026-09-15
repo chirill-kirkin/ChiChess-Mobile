@@ -12,19 +12,34 @@ import com.github.chirillkirkin.mvu.Update
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.DEFAULT_CONCURRENCY
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
+/** An [MVU] runtime that reports whether its initial state was restored. */
+public interface SavedStateMVU<Message, State, Command> : MVU<Message, State, Command> {
+  /** Whether the runtime restored state from its [SavedStateHandle]. */
+  public val isStateRestored: Boolean
+}
+
 /**
- * An [MVU] decorator that restores state from and saves state to a [SavedStateHandle].
+ * A [SavedStateMVU] decorator that restores state from and saves state to a [SavedStateHandle].
  */
 public class SavedStateMVUStore<Message, State, Command> internal constructor(
   private val delegate: MVU<Message, State, Command>,
   private val savedStateHandle: SavedStateHandle,
   private val stateKey: String,
   private val saveState: (State) -> Any,
-  public val isStateRestored: Boolean,
-) : MVU<Message, State, Command> by delegate {
+  override val isStateRestored: Boolean,
+) : SavedStateMVU<Message, State, Command> {
+  override val state: StateFlow<State> = delegate.state
+  override val commands: Flow<Command> = delegate.commands
+
+  override fun send(message: Message) {
+    delegate.send(message)
+  }
+
   override fun launchIn(scope: CoroutineScope) {
     delegate.state
       .onEach { state -> savedStateHandle[stateKey] = saveState(state) }

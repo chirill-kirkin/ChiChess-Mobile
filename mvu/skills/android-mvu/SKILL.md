@@ -177,43 +177,46 @@ Every message emitted by a command or subscription returns to the same sequentia
 
 `commands` is backed by `Channel.receiveAsFlow()`. It is single-consumer, not broadcast: multiple collectors divide commands. Collect it in exactly one UI location.
 
-Create one store per ViewModel instance and call `launchIn(viewModelScope)` exactly once. Repeated launch duplicates runtime pipelines and initial commands. Clearing the ViewModel cancels the scope and therefore messages, commands, and subscriptions; no separate close API is required.
+Constructor-inject one feature-specific Store per ViewModel instance and delegate the ViewModel's MVU contract to it. Call `launchIn(viewModelScope)` exactly once. Repeated launch duplicates runtime pipelines and initial commands. Clearing the ViewModel cancels the scope and therefore messages, commands, and subscriptions; no separate close API is required.
 
 ## ViewModel ownership
 
-Expose the store's StateFlow and commands directly. Do not mirror state into another `MutableStateFlow`.
+Dependency injection owns runtime construction and its lifetime. Define a feature-specific Store with an injectable constructor, scope it to one ViewModel instance, and inherit from `MVUStore`. The Store configures the feature runtime. The ViewModel delegates `MVU` to the injected Store, eliminating forwarding properties and methods. Do not mirror state into another `MutableStateFlow`.
+
+With Hilt, annotate the feature Store with `@ViewModelScoped` and use constructor injection. A separate Hilt module is unnecessary when the concrete Store can be constructed directly:
 
 ```kotlin
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.chirillkirkin.mvu.MVU
 import com.github.chirillkirkin.mvu.MVUStore
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.StateFlow
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.scopes.ViewModelScoped
+import javax.inject.Inject
 
-class ProfileViewModel(
+@ViewModelScoped
+class ProfileStore @Inject constructor(
   repository: ProfileRepository,
-) : ViewModel() {
-  private val store = MVUStore(
+) : MVUStore<ProfileMessage, ProfileState, ProfileCommand>(
     initialState = ProfileState(),
     update = profileUpdate,
     commandExecutor = profileCommandExecutor(repository),
     initialCommands = listOf(ProfileCommand.LoadProfile),
   )
 
-  val state: StateFlow<ProfileState> = store.state
-  val commands: Flow<ProfileCommand> = store.commands
-
+@HiltViewModel
+class ProfileViewModel @Inject constructor(
+  store: ProfileStore,
+) : ViewModel(), MVU<ProfileMessage, ProfileState, ProfileCommand> by store {
   init {
-    store.launchIn(viewModelScope)
-  }
-
-  fun send(message: ProfileMessage) {
-    store.send(message)
+    launchIn(viewModelScope)
   }
 }
 ```
 
-Do not start the store lazily from a composable. The ViewModel owns its lifetime, not the current composition.
+Use the equivalent per-ViewModel scope when the project uses another DI framework. Do not start the Store lazily from a composable. The ViewModel owns the running coroutine lifetime, not the current composition, while DI owns construction.
+
+Keep a small feature's State, Message, Command, Update, Store, and ViewModel together by default. Split them only when file size or distinct responsibilities make a separate file clearer.
 
 ## Compose Root and Screen
 
@@ -298,7 +301,12 @@ import android.os.Parcelable
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.chirillkirkin.mvu.MVU
+import com.github.chirillkirkin.mvu.savedstate.SavedStateMVU
 import com.github.chirillkirkin.mvu.savedstate.mvuStore
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.scopes.ViewModelScoped
+import javax.inject.Inject
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
@@ -307,34 +315,28 @@ data class EditorState(
   val body: String = "",
 ) : Parcelable
 
-class EditorViewModel(
+private const val EDITOR_STATE_KEY = "editor_state"
+
+@ViewModelScoped
+class EditorStore @Inject constructor(
   savedStateHandle: SavedStateHandle,
   repository: EditorRepository,
-) : ViewModel() {
-  private val store = savedStateHandle.mvuStore(
+) : SavedStateMVU<EditorMessage, EditorState, EditorCommand> by savedStateHandle.mvuStore(
     initialState = EditorState(),
     update = editorUpdate,
     commandExecutor = editorCommandExecutor(repository),
-    stateKey = STATE_KEY,
+    stateKey = EDITOR_STATE_KEY,
     initialCommands = { isStateRestored ->
       if (isStateRestored) emptyList() else listOf(EditorCommand.LoadDraft)
     },
   )
 
-  val state = store.state
-  val commands = store.commands
-  val isStateRestored: Boolean = store.isStateRestored
-
+@HiltViewModel
+class EditorViewModel @Inject constructor(
+  store: EditorStore,
+) : ViewModel(), SavedStateMVU<EditorMessage, EditorState, EditorCommand> by store {
   init {
-    store.launchIn(viewModelScope)
-  }
-
-  fun send(message: EditorMessage) {
-    store.send(message)
-  }
-
-  private companion object {
-    const val STATE_KEY = "editor_state"
+    launchIn(viewModelScope)
   }
 }
 ```
@@ -358,24 +360,28 @@ data class EditorSavedState(
   val body: String,
 ) : Parcelable
 
-private val store = savedStateHandle.mvuStore(
-  initialState = EditorRuntimeState(),
-  update = runtimeEditorUpdate,
-  commandExecutor = runtimeEditorCommandExecutor(repository),
-  saveState = { state ->
-    EditorSavedState(
-      title = state.title,
-      body = state.body,
-    )
-  },
-  restoreState = { savedState, initialState ->
-    initialState.copy(
-      title = savedState.title,
-      body = savedState.body,
-    )
-  },
-  stateKey = STATE_KEY,
-)
+@ViewModelScoped
+class RuntimeEditorStore @Inject constructor(
+  savedStateHandle: SavedStateHandle,
+  repository: EditorRepository,
+) : SavedStateMVU<EditorMessage, EditorRuntimeState, EditorCommand> by savedStateHandle.mvuStore(
+    initialState = EditorRuntimeState(),
+    update = runtimeEditorUpdate,
+    commandExecutor = runtimeEditorCommandExecutor(repository),
+    saveState = { state ->
+      EditorSavedState(
+        title = state.title,
+        body = state.body,
+      )
+    },
+    restoreState = { savedState, initialState ->
+      initialState.copy(
+        title = savedState.title,
+        body = savedState.body,
+      )
+    },
+    stateKey = EDITOR_STATE_KEY,
+  )
 ```
 
 `restoreState` receives the saved projection and a fresh initial State. Merge into the fresh value so omitted transient fields retain current defaults. The saved projection must be supported by `SavedStateHandle`; prefer `Parcelable` for structured Android state.
@@ -400,7 +406,7 @@ Use constants for repeated state keys, identifiers, strings, and timing values i
 - Update is pure and is the only state-transition authority.
 - Expected failures return messages; cancellation is preserved.
 - Ongoing state-dependent work is a Subscription.
-- The ViewModel creates one store and launches it once in `viewModelScope`.
+- DI constructor-injects one feature-specific Store per ViewModel instance; the ViewModel delegates its MVU contract to `store` and launches it once in `viewModelScope`.
 - State is collected with lifecycle awareness and exactly one UI collector consumes commands.
 - Root handles commands; Screen only renders State and sends Messages.
 - Durable/restorable information is State, not Command.
