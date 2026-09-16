@@ -6,6 +6,7 @@ import com.github.chirillkirkin.chichess.feature.game.domain.Square
 data class BoardState(
   val position: ChessPosition,
   val selectedSquare: Square? = null,
+  val legalTargets: Set<Square> = emptySet(),
 )
 
 sealed interface BoardMessage {

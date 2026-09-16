@@ -64,7 +64,8 @@ fun ChessBoard(
           ChessFile.entries.forEach { file ->
             val square = Square(file, rank)
             val isSelected = square == state.selectedSquare
-            val squareColor = square.color.toBoardColor(colors).withSelection(isSelected, colors)
+            val isLegalTarget = square in state.legalTargets
+            val squareColor = square.color.toBoardColor(colors).withHighlight(isSelected, isLegalTarget, colors)
             val coordinateColor = square.color.toCoordinateColor(colors)
             val squareDescription =
               stringResource(
@@ -131,14 +132,15 @@ fun ChessBoard(
   }
 }
 
-private fun Color.withSelection(
+private fun Color.withHighlight(
   isSelected: Boolean,
+  isLegalTarget: Boolean,
   colors: ChiChessColors,
 ): Color =
-  if (isSelected) {
-    colors.boardSelectionOverlay.compositeOver(this)
-  } else {
-    this
+  when {
+    isSelected -> colors.boardSelectionOverlay.compositeOver(this)
+    isLegalTarget -> colors.boardLegalTargetOverlay.compositeOver(this)
+    else -> this
   }
 
 private fun SquareColor.toBoardColor(colors: ChiChessColors): Color =

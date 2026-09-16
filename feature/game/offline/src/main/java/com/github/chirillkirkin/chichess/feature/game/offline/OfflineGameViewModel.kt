@@ -47,10 +47,12 @@ private fun OfflineGameState.updateBoard(
   when (message) {
     is BoardMessage.SquareClick -> {
       val selectedSquare = board.selectedSquare
-      if (selectedSquare == null || selectedSquare == message.square) {
-        copy(board = boardUpdate(message, board))
-      } else if (board.position[selectedSquare]?.color == board.position[message.square]?.color) {
-        copy(board = boardUpdate(message, board))
+      if (
+        selectedSquare == null ||
+        selectedSquare == message.square ||
+        board.position[selectedSquare]?.color == board.position[message.square]?.color
+      ) {
+        selectSquare(message, gameEngine)
       } else {
         val move = ChessMove(from = selectedSquare, to = message.square)
         when (val result = gameEngine.applyMove(board.position, move)) {
@@ -60,6 +62,7 @@ private fun OfflineGameState.updateBoard(
                 board.copy(
                   position = result.position,
                   selectedSquare = null,
+                  legalTargets = emptySet(),
                 ),
             )
 
@@ -68,6 +71,24 @@ private fun OfflineGameState.updateBoard(
       }
     }
   }
+
+private fun OfflineGameState.selectSquare(
+  message: BoardMessage.SquareClick,
+  gameEngine: ChessGameEngine,
+): OfflineGameState {
+  val updatedBoard = boardUpdate(message, board)
+  val legalTargets =
+    updatedBoard.selectedSquare?.let { selectedSquare ->
+      gameEngine
+        .legalMoves(updatedBoard.position)
+        .asSequence()
+        .filter { it.from == selectedSquare }
+        .map { it.to }
+        .toSet()
+    } ?: emptySet()
+
+  return copy(board = updatedBoard.copy(legalTargets = legalTargets))
+}
 
 @ViewModelScoped
 class OfflineGameStore @Inject constructor(

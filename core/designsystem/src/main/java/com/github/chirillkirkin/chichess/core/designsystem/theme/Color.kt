@@ -16,6 +16,7 @@ data class ChiChessColors(
   val lightBoardSquare: Color,
   val darkBoardSquare: Color,
   val boardSelectionOverlay: Color,
+  val boardLegalTargetOverlay: Color,
 )
 
 internal val DefaultChiChessColors =
@@ -23,4 +24,5 @@ internal val DefaultChiChessColors =
     lightBoardSquare = Color(0xFFF0D9B5),
     darkBoardSquare = Color(0xFFB58863),
     boardSelectionOverlay = Color(0x80F6F669),
+    boardLegalTargetOverlay = Color(0x663A7D44),
   )
