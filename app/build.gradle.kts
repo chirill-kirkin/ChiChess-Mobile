@@ -50,11 +50,13 @@ dependencies {
   implementation(project(":core:designsystem"))
   implementation(project(":feature:game:domain"))
   implementation(project(":feature:game:engine"))
+  implementation(project(":feature:game:offline"))
   implementation(project(":feature:home:presentation"))
 
   // Core Android dependencies
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.lifecycle.runtime.ktx)
+  implementation(libs.androidx.lifecycle.viewmodel.navigation3)
   implementation(libs.androidx.activity.compose)
   implementation(libs.dagger.hilt.android)
   ksp(libs.dagger.hilt.compiler)
