@@ -48,6 +48,8 @@ kotlin {
 dependencies {
   // Modules
   implementation(project(":core:designsystem"))
+  implementation(project(":feature:game:domain"))
+  implementation(project(":feature:game:engine"))
   implementation(project(":feature:home:presentation"))
 
   // Core Android dependencies
