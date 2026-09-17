@@ -1,0 +1,5 @@
+<resources>
+    <string name="white_wins_by_checkmate">White wins by checkmate</string>
+    <string name="black_wins_by_checkmate">Black wins by checkmate</string>
+    <string name="draw_by_stalemate">Draw by stalemate</string>
+</resources>

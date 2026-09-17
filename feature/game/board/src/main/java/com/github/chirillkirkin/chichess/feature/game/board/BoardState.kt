@@ -7,6 +7,7 @@ data class BoardState(
   val position: ChessPosition,
   val selectedSquare: Square? = null,
   val legalTargets: Set<Square> = emptySet(),
+  val checkedKingSquare: Square? = null,
 )
 
 sealed interface BoardMessage {

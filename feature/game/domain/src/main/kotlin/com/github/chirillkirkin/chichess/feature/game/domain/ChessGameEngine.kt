@@ -3,10 +3,24 @@ package com.github.chirillkirkin.chichess.feature.game.domain
 interface ChessGameEngine {
   fun legalMoves(position: ChessPosition): Set<ChessMove>
 
+  fun checkedKingSquare(position: ChessPosition): Square?
+
+  fun gameStatus(position: ChessPosition): GameStatus
+
   fun applyMove(
     position: ChessPosition,
     move: ChessMove,
   ): MoveApplicationResult
+}
+
+sealed interface GameStatus {
+  data object Ongoing : GameStatus
+
+  data class Checkmate(
+    val winner: PieceColor,
+  ) : GameStatus
+
+  data object Stalemate : GameStatus
 }
 
 enum class MoveRejectionReason {

@@ -7,6 +7,7 @@ import com.github.chirillkirkin.chichess.feature.game.board.BoardState
 import com.github.chirillkirkin.chichess.feature.game.board.boardUpdate
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessGameEngine
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessMove
+import com.github.chirillkirkin.chichess.feature.game.domain.GameStatus
 import com.github.chirillkirkin.chichess.feature.game.domain.MoveApplicationResult
 import com.github.chirillkirkin.chichess.feature.game.domain.MoveRejectionReason
 import com.github.chirillkirkin.chichess.feature.game.domain.PromotionPiece
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.emptyFlow
 data class OfflineGameState(
   val board: BoardState = BoardState(position = initialChessPosition()),
   val pendingPromotion: ChessMove? = null,
+  val gameStatus: GameStatus = GameStatus.Ongoing,
 )
 
 sealed interface OfflineGameMessage {
@@ -44,7 +46,7 @@ internal fun offlineGameUpdate(
     when (message) {
       is OfflineGameMessage.Board ->
         state {
-          if (pendingPromotion == null) {
+          if (pendingPromotion == null && gameStatus == GameStatus.Ongoing) {
             updateBoard(message.message, gameEngine)
           } else {
             this
@@ -102,8 +104,10 @@ private fun OfflineGameState.applyMove(
             position = result.position,
             selectedSquare = null,
             legalTargets = emptySet(),
+            checkedKingSquare = gameEngine.checkedKingSquare(result.position),
           ),
         pendingPromotion = null,
+        gameStatus = gameEngine.gameStatus(result.position),
       )
 
     is MoveApplicationResult.Rejected ->

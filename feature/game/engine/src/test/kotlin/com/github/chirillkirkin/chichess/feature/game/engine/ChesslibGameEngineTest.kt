@@ -6,6 +6,7 @@ import com.github.chirillkirkin.chichess.feature.game.domain.ChessPiece
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessPosition
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessRank
 import com.github.chirillkirkin.chichess.feature.game.domain.Fen
+import com.github.chirillkirkin.chichess.feature.game.domain.GameStatus
 import com.github.chirillkirkin.chichess.feature.game.domain.MoveApplicationResult
 import com.github.chirillkirkin.chichess.feature.game.domain.MoveRejectionReason
 import com.github.chirillkirkin.chichess.feature.game.domain.PieceColor
@@ -96,6 +97,77 @@ class ChesslibGameEngineTest {
     )
   }
 
+  @Test
+  fun `initial position remains ongoing`() {
+    assertEquals(GameStatus.Ongoing, engine.gameStatus(initialChessPosition()))
+  }
+
+  @Test
+  fun `checked king square is mapped in check and checkmate`() {
+    val checkedPosition =
+      ChessPosition.fromSnapshot(
+        fen = Fen(CheckFenValue),
+        pieces =
+          mapOf(
+            Square(ChessFile.E, ChessRank.EIGHT) to ChessPiece(PieceColor.BLACK, PieceType.KING),
+            Square(ChessFile.E, ChessRank.TWO) to ChessPiece(PieceColor.WHITE, PieceType.QUEEN),
+            Square(ChessFile.E, ChessRank.ONE) to ChessPiece(PieceColor.WHITE, PieceType.KING),
+          ),
+        sideToMove = PieceColor.BLACK,
+      )
+    val matedPosition =
+      queenEndgamePosition(
+        fen = CheckmateFenValue,
+        queenSquare = Square(ChessFile.G, ChessRank.SEVEN),
+        whiteKingSquare = Square(ChessFile.F, ChessRank.SIX),
+      )
+
+    assertNull(engine.checkedKingSquare(initialChessPosition()))
+    assertEquals(GameStatus.Ongoing, engine.gameStatus(checkedPosition))
+    assertEquals(Square(ChessFile.E, ChessRank.EIGHT), engine.checkedKingSquare(checkedPosition))
+    assertEquals(Square(ChessFile.H, ChessRank.EIGHT), engine.checkedKingSquare(matedPosition))
+  }
+
+  @Test
+  fun `checkmate identifies the winning side`() {
+    val position =
+      queenEndgamePosition(
+        fen = CheckmateFenValue,
+        queenSquare = Square(ChessFile.G, ChessRank.SEVEN),
+        whiteKingSquare = Square(ChessFile.F, ChessRank.SIX),
+      )
+
+    assertEquals(GameStatus.Checkmate(PieceColor.WHITE), engine.gameStatus(position))
+  }
+
+  @Test
+  fun `stalemate is distinguished from checkmate`() {
+    val position =
+      queenEndgamePosition(
+        fen = StalemateFenValue,
+        queenSquare = Square(ChessFile.F, ChessRank.SEVEN),
+        whiteKingSquare = Square(ChessFile.G, ChessRank.SIX),
+      )
+
+    assertEquals(GameStatus.Stalemate, engine.gameStatus(position))
+  }
+
+  private fun queenEndgamePosition(
+    fen: String,
+    queenSquare: Square,
+    whiteKingSquare: Square,
+  ): ChessPosition =
+    ChessPosition.fromSnapshot(
+      fen = Fen(fen),
+      pieces =
+        mapOf(
+          queenSquare to ChessPiece(PieceColor.WHITE, PieceType.QUEEN),
+          whiteKingSquare to ChessPiece(PieceColor.WHITE, PieceType.KING),
+          Square(ChessFile.H, ChessRank.EIGHT) to ChessPiece(PieceColor.BLACK, PieceType.KING),
+        ),
+      sideToMove = PieceColor.BLACK,
+    )
+
   private fun promotionPosition(pawnSquare: Square): ChessPosition =
     ChessPosition.fromSnapshot(
       fen = Fen(PromotionPositionFenValue),
@@ -113,5 +185,8 @@ class ChesslibGameEngineTest {
   private companion object {
     const val InitialLegalMoveCount = 20
     const val PromotionPositionFenValue = "7k/P7/8/8/8/8/8/7K w - - 0 1"
+    const val CheckFenValue = "4k3/8/8/8/8/8/4Q3/4K3 b - - 0 1"
+    const val CheckmateFenValue = "7k/6Q1/5K2/8/8/8/8/8 b - - 0 1"
+    const val StalemateFenValue = "7k/5Q2/6K1/8/8/8/8/8 b - - 0 1"
   }
 }

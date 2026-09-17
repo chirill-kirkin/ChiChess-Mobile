@@ -13,10 +13,12 @@ val Typography = Typography()
 data class ChiChessTypography(
   val boardCoordinate: TextStyle,
   val screenTitle: TextStyle,
+  val gameResult: TextStyle,
 )
 
 internal val DefaultChiChessTypography =
   ChiChessTypography(
     boardCoordinate = Typography.labelSmall,
     screenTitle = Typography.bodyLarge,
+    gameResult = Typography.titleMedium,
   )

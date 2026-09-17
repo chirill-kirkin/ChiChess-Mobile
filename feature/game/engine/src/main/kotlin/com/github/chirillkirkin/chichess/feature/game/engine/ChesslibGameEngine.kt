@@ -15,6 +15,7 @@ import com.github.chirillkirkin.chichess.feature.game.domain.ChessPiece
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessPosition
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessRank
 import com.github.chirillkirkin.chichess.feature.game.domain.Fen
+import com.github.chirillkirkin.chichess.feature.game.domain.GameStatus
 import com.github.chirillkirkin.chichess.feature.game.domain.MoveApplicationResult
 import com.github.chirillkirkin.chichess.feature.game.domain.MoveRejectionReason
 import com.github.chirillkirkin.chichess.feature.game.domain.PieceColor
@@ -29,6 +30,24 @@ class ChesslibGameEngine @Inject constructor() : ChessGameEngine {
       .toChesslibBoard()
       .legalMoves()
       .mapTo(linkedSetOf(), Move::toDomainMove)
+
+  override fun checkedKingSquare(position: ChessPosition): Square? {
+    val board = position.toChesslibBoard()
+    return if (board.isKingAttacked) {
+      board.getKingSquare(board.sideToMove).toDomainSquare()
+    } else {
+      null
+    }
+  }
+
+  override fun gameStatus(position: ChessPosition): GameStatus {
+    val board = position.toChesslibBoard()
+    return when {
+      board.isMated -> GameStatus.Checkmate(winner = board.sideToMove.flip().toDomainPieceColor())
+      board.isStaleMate -> GameStatus.Stalemate
+      else -> GameStatus.Ongoing
+    }
+  }
 
   override fun applyMove(
     position: ChessPosition,
