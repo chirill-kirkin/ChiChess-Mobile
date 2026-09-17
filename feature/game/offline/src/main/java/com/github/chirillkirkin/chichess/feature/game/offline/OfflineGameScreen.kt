@@ -1,10 +1,12 @@
 package com.github.chirillkirkin.chichess.feature.game.offline
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -18,6 +20,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.chirillkirkin.chichess.core.designsystem.theme.ChiChessTheme
 import com.github.chirillkirkin.chichess.feature.game.board.BoardMessage
 import com.github.chirillkirkin.chichess.feature.game.board.ChessBoard
+import com.github.chirillkirkin.chichess.feature.game.domain.DrawReason
 import com.github.chirillkirkin.chichess.feature.game.domain.GameStatus
 import com.github.chirillkirkin.chichess.feature.game.domain.PieceColor
 
@@ -53,14 +56,25 @@ fun OfflineGameScreen(
             PieceColor.BLACK -> R.string.black_wins_by_checkmate
           },
         )
-      GameStatus.Stalemate -> stringResource(R.string.draw_by_stalemate)
+      is GameStatus.Draw ->
+        stringResource(
+          when (status.reason) {
+            DrawReason.STALEMATE -> R.string.draw_by_stalemate
+            DrawReason.THREEFOLD_REPETITION -> R.string.draw_by_threefold_repetition
+            DrawReason.FIFTY_MOVE_RULE -> R.string.draw_by_fifty_move_rule
+            DrawReason.FIVEFOLD_REPETITION -> R.string.draw_by_fivefold_repetition
+            DrawReason.SEVENTY_FIVE_MOVE_RULE -> R.string.draw_by_seventy_five_move_rule
+            DrawReason.INSUFFICIENT_MATERIAL -> R.string.draw_by_insufficient_material
+          },
+        )
     }
 
   BoxWithConstraints(
     modifier = modifier.fillMaxSize(),
     contentAlignment = Alignment.Center,
   ) {
-    val resultSpace = if (resultText == null) 0.dp else GameResultSpace
+    val canClaimDraw = resultText == null && state.claimableDrawReason != null
+    val resultSpace = GameResultSpace.coerceAtMost(maxHeight)
     val boardSize = minOf(maxWidth, (maxHeight - resultSpace).coerceAtLeast(0.dp))
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -75,12 +89,24 @@ fun OfflineGameScreen(
         onPromotionDismissed = { onMessage(OfflineGameMessage.PromotionDismissed) },
       )
 
-      if (resultText != null) {
-        Text(
-          text = resultText,
-          modifier = Modifier.padding(top = ChiChessTheme.spacing.medium),
-          style = ChiChessTheme.typography.gameResult,
-        )
+      Box(
+        modifier = Modifier.size(width = boardSize, height = resultSpace),
+        contentAlignment = Alignment.TopCenter,
+      ) {
+        if (resultText != null) {
+          Text(
+            text = resultText,
+            modifier = Modifier.padding(top = ChiChessTheme.spacing.medium),
+            style = ChiChessTheme.typography.gameResult,
+          )
+        } else if (canClaimDraw) {
+          Button(
+            onClick = { onMessage(OfflineGameMessage.ClaimDraw) },
+            modifier = Modifier.padding(top = ChiChessTheme.spacing.medium),
+          ) {
+            Text(stringResource(R.string.claim_draw))
+          }
+        }
       }
     }
   }

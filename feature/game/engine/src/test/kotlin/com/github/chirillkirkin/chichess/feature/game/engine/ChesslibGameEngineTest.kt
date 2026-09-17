@@ -5,6 +5,7 @@ import com.github.chirillkirkin.chichess.feature.game.domain.ChessMove
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessPiece
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessPosition
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessRank
+import com.github.chirillkirkin.chichess.feature.game.domain.DrawReason
 import com.github.chirillkirkin.chichess.feature.game.domain.Fen
 import com.github.chirillkirkin.chichess.feature.game.domain.GameStatus
 import com.github.chirillkirkin.chichess.feature.game.domain.MoveApplicationResult
@@ -149,7 +150,73 @@ class ChesslibGameEngineTest {
         whiteKingSquare = Square(ChessFile.G, ChessRank.SIX),
       )
 
-    assertEquals(GameStatus.Stalemate, engine.gameStatus(position))
+    assertEquals(GameStatus.Draw(DrawReason.STALEMATE), engine.gameStatus(position))
+  }
+
+  @Test
+  fun `repetition can be claimed on third occurrence and ends automatically on fifth`() {
+    val whiteKnightHome = Square(ChessFile.G, ChessRank.ONE)
+    val whiteKnightAway = Square(ChessFile.F, ChessRank.THREE)
+    val blackKnightHome = Square(ChessFile.G, ChessRank.EIGHT)
+    val blackKnightAway = Square(ChessFile.F, ChessRank.SIX)
+    val cycle =
+      listOf(
+        ChessMove(whiteKnightHome, whiteKnightAway),
+        ChessMove(blackKnightHome, blackKnightAway),
+        ChessMove(whiteKnightAway, whiteKnightHome),
+        ChessMove(blackKnightAway, blackKnightHome),
+      )
+    val afterOneCycle = cycle.fold(initialChessPosition()) { position, move ->
+      assertIs<MoveApplicationResult.Applied>(engine.applyMove(position, move)).position
+    }
+    val afterTwoCycles = cycle.fold(afterOneCycle) { position, move ->
+      assertIs<MoveApplicationResult.Applied>(engine.applyMove(position, move)).position
+    }
+    val afterFourCycles = (cycle + cycle).fold(afterTwoCycles) { position, move ->
+      assertIs<MoveApplicationResult.Applied>(engine.applyMove(position, move)).position
+    }
+
+    assertEquals(GameStatus.Ongoing, engine.gameStatus(afterOneCycle))
+    assertNull(engine.claimableDrawReason(afterOneCycle))
+    assertEquals(GameStatus.Ongoing, engine.gameStatus(afterTwoCycles))
+    assertEquals(DrawReason.THREEFOLD_REPETITION, engine.claimableDrawReason(afterTwoCycles))
+    assertEquals(GameStatus.Draw(DrawReason.FIVEFOLD_REPETITION), engine.gameStatus(afterFourCycles))
+  }
+
+  @Test
+  fun `fifty move rule can be claimed and seventy five moves ends the game`() {
+    val rookSquare = Square(ChessFile.H, ChessRank.ONE)
+    val beforeClaim = rookEndgamePosition(BeforeFiftyMoveDrawFenValue)
+    val beforeAutomaticDraw = rookEndgamePosition(BeforeSeventyFiveMoveDrawFenValue)
+    val claimablePosition =
+      assertIs<MoveApplicationResult.Applied>(
+        engine.applyMove(beforeClaim, ChessMove(rookSquare, Square(ChessFile.H, ChessRank.TWO))),
+      ).position
+    val automaticDrawPosition =
+      assertIs<MoveApplicationResult.Applied>(
+        engine.applyMove(beforeAutomaticDraw, ChessMove(rookSquare, Square(ChessFile.H, ChessRank.TWO))),
+      ).position
+
+    assertNull(engine.claimableDrawReason(beforeClaim))
+    assertEquals(GameStatus.Ongoing, engine.gameStatus(claimablePosition))
+    assertEquals(DrawReason.FIFTY_MOVE_RULE, engine.claimableDrawReason(claimablePosition))
+    assertEquals(GameStatus.Draw(DrawReason.SEVENTY_FIVE_MOVE_RULE), engine.gameStatus(automaticDrawPosition))
+  }
+
+  @Test
+  fun `kings alone are a draw by insufficient material`() {
+    val position =
+      ChessPosition.fromSnapshot(
+        fen = Fen(KingsOnlyFenValue),
+        pieces =
+          mapOf(
+            Square(ChessFile.E, ChessRank.EIGHT) to ChessPiece(PieceColor.BLACK, PieceType.KING),
+            Square(ChessFile.E, ChessRank.ONE) to ChessPiece(PieceColor.WHITE, PieceType.KING),
+          ),
+        sideToMove = PieceColor.WHITE,
+      )
+
+    assertEquals(GameStatus.Draw(DrawReason.INSUFFICIENT_MATERIAL), engine.gameStatus(position))
   }
 
   private fun queenEndgamePosition(
@@ -182,11 +249,26 @@ class ChesslibGameEngineTest {
       sideToMove = PieceColor.WHITE,
     )
 
+  private fun rookEndgamePosition(fen: String): ChessPosition =
+    ChessPosition.fromSnapshot(
+      fen = Fen(fen),
+      pieces =
+        mapOf(
+          Square(ChessFile.E, ChessRank.EIGHT) to ChessPiece(PieceColor.BLACK, PieceType.KING),
+          Square(ChessFile.E, ChessRank.ONE) to ChessPiece(PieceColor.WHITE, PieceType.KING),
+          Square(ChessFile.H, ChessRank.ONE) to ChessPiece(PieceColor.WHITE, PieceType.ROOK),
+        ),
+      sideToMove = PieceColor.WHITE,
+    )
+
   private companion object {
     const val InitialLegalMoveCount = 20
     const val PromotionPositionFenValue = "7k/P7/8/8/8/8/8/7K w - - 0 1"
     const val CheckFenValue = "4k3/8/8/8/8/8/4Q3/4K3 b - - 0 1"
     const val CheckmateFenValue = "7k/6Q1/5K2/8/8/8/8/8 b - - 0 1"
     const val StalemateFenValue = "7k/5Q2/6K1/8/8/8/8/8 b - - 0 1"
+    const val BeforeFiftyMoveDrawFenValue = "4k3/8/8/8/8/8/8/4K2R w - - 99 51"
+    const val BeforeSeventyFiveMoveDrawFenValue = "4k3/8/8/8/8/8/8/4K2R w - - 149 76"
+    const val KingsOnlyFenValue = "4k3/8/8/8/8/8/8/4K3 w - - 0 1"
   }
 }

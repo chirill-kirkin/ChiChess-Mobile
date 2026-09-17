@@ -7,6 +7,8 @@ interface ChessGameEngine {
 
   fun gameStatus(position: ChessPosition): GameStatus
 
+  fun claimableDrawReason(position: ChessPosition): DrawReason?
+
   fun applyMove(
     position: ChessPosition,
     move: ChessMove,
@@ -20,7 +22,18 @@ sealed interface GameStatus {
     val winner: PieceColor,
   ) : GameStatus
 
-  data object Stalemate : GameStatus
+  data class Draw(
+    val reason: DrawReason,
+  ) : GameStatus
+}
+
+enum class DrawReason {
+  STALEMATE,
+  THREEFOLD_REPETITION,
+  FIFTY_MOVE_RULE,
+  FIVEFOLD_REPETITION,
+  SEVENTY_FIVE_MOVE_RULE,
+  INSUFFICIENT_MATERIAL,
 }
 
 enum class MoveRejectionReason {

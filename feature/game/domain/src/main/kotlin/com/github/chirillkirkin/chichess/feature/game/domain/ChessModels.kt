@@ -86,6 +86,8 @@ data class ChessPosition private constructor(
   val fen: Fen,
   private val cells: List<ChessPiece?>,
   val sideToMove: PieceColor,
+  val historyStartFen: Fen,
+  val moveHistory: List<ChessMove>,
 ) {
   operator fun get(square: Square): ChessPiece? = cells[square.positionIndex]
 
@@ -96,6 +98,8 @@ data class ChessPosition private constructor(
       fen: Fen,
       pieces: Map<Square, ChessPiece>,
       sideToMove: PieceColor,
+      historyStartFen: Fen = fen,
+      moveHistory: List<ChessMove> = emptyList(),
     ): ChessPosition {
       val cells = MutableList<ChessPiece?>(squareCount) { null }
       pieces.forEach { (square, piece) -> cells[square.positionIndex] = piece }
@@ -103,6 +107,8 @@ data class ChessPosition private constructor(
         fen = fen,
         cells = cells,
         sideToMove = sideToMove,
+        historyStartFen = historyStartFen,
+        moveHistory = moveHistory.toList(),
       )
     }
   }

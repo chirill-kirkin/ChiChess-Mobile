@@ -7,6 +7,7 @@ import com.github.chirillkirkin.chichess.feature.game.board.BoardState
 import com.github.chirillkirkin.chichess.feature.game.board.boardUpdate
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessGameEngine
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessMove
+import com.github.chirillkirkin.chichess.feature.game.domain.DrawReason
 import com.github.chirillkirkin.chichess.feature.game.domain.GameStatus
 import com.github.chirillkirkin.chichess.feature.game.domain.MoveApplicationResult
 import com.github.chirillkirkin.chichess.feature.game.domain.MoveRejectionReason
@@ -25,6 +26,7 @@ data class OfflineGameState(
   val board: BoardState = BoardState(position = initialChessPosition()),
   val pendingPromotion: ChessMove? = null,
   val gameStatus: GameStatus = GameStatus.Ongoing,
+  val claimableDrawReason: DrawReason? = null,
 )
 
 sealed interface OfflineGameMessage {
@@ -37,6 +39,8 @@ sealed interface OfflineGameMessage {
   ) : OfflineGameMessage
 
   data object PromotionDismissed : OfflineGameMessage
+
+  data object ClaimDraw : OfflineGameMessage
 }
 
 internal fun offlineGameUpdate(
@@ -61,6 +65,18 @@ internal fun offlineGameUpdate(
       OfflineGameMessage.PromotionDismissed ->
         state {
           copy(pendingPromotion = null)
+        }
+
+      OfflineGameMessage.ClaimDraw ->
+        state {
+          if (gameStatus == GameStatus.Ongoing && claimableDrawReason != null) {
+            copy(
+              gameStatus = GameStatus.Draw(claimableDrawReason),
+              claimableDrawReason = null,
+            )
+          } else {
+            this
+          }
         }
     }
   }
@@ -97,7 +113,8 @@ private fun OfflineGameState.applyMove(
   gameEngine: ChessGameEngine,
 ): OfflineGameState =
   when (val result = gameEngine.applyMove(board.position, move)) {
-    is MoveApplicationResult.Applied ->
+    is MoveApplicationResult.Applied -> {
+      val status = gameEngine.gameStatus(result.position)
       copy(
         board =
           board.copy(
@@ -107,8 +124,11 @@ private fun OfflineGameState.applyMove(
             checkedKingSquare = gameEngine.checkedKingSquare(result.position),
           ),
         pendingPromotion = null,
-        gameStatus = gameEngine.gameStatus(result.position),
+        gameStatus = status,
+        claimableDrawReason =
+          if (status == GameStatus.Ongoing) gameEngine.claimableDrawReason(result.position) else null,
       )
+    }
 
     is MoveApplicationResult.Rejected ->
       if (result.reason == MoveRejectionReason.PROMOTION_REQUIRED && move.promotion == null) {

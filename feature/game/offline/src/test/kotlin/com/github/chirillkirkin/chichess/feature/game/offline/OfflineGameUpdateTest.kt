@@ -8,6 +8,7 @@ import com.github.chirillkirkin.chichess.feature.game.domain.ChessMove
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessPiece
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessPosition
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessRank
+import com.github.chirillkirkin.chichess.feature.game.domain.DrawReason
 import com.github.chirillkirkin.chichess.feature.game.domain.Fen
 import com.github.chirillkirkin.chichess.feature.game.domain.GameStatus
 import com.github.chirillkirkin.chichess.feature.game.domain.MoveApplicationResult
@@ -73,6 +74,9 @@ class OfflineGameUpdateTest {
           )
 
         override fun gameStatus(position: ChessPosition): GameStatus =
+          error("This test only selects pieces")
+
+        override fun claimableDrawReason(position: ChessPosition): DrawReason? =
           error("This test only selects pieces")
 
         override fun checkedKingSquare(position: ChessPosition): Square? =
@@ -214,7 +218,38 @@ class OfflineGameUpdateTest {
 
     val finishedState = initialState.reduceMove(queenSquare, destination)
 
-    assertEquals(GameStatus.Stalemate, finishedState.gameStatus)
+    assertEquals(GameStatus.Draw(DrawReason.STALEMATE), finishedState.gameStatus)
+  }
+
+  @Test
+  fun `claiming an available draw ends the game`() {
+    val rookSquare = Square(ChessFile.H, ChessRank.ONE)
+    val initialState =
+      OfflineGameState(
+        board =
+          BoardState(
+            position =
+              ChessPosition.fromSnapshot(
+                fen = Fen(BeforeFiftyMoveDrawFenValue),
+                pieces =
+                  mapOf(
+                    Square(ChessFile.E, ChessRank.EIGHT) to ChessPiece(PieceColor.BLACK, PieceType.KING),
+                    Square(ChessFile.E, ChessRank.ONE) to ChessPiece(PieceColor.WHITE, PieceType.KING),
+                    rookSquare to ChessPiece(PieceColor.WHITE, PieceType.ROOK),
+                  ),
+                sideToMove = PieceColor.WHITE,
+              ),
+          ),
+      )
+
+    val claimableState = initialState.reduceMove(rookSquare, Square(ChessFile.H, ChessRank.TWO))
+    val finishedState = claimableState.reduceMessage(OfflineGameMessage.ClaimDraw)
+
+    assertEquals(DrawReason.FIFTY_MOVE_RULE, claimableState.claimableDrawReason)
+    assertEquals(GameStatus.Ongoing, claimableState.gameStatus)
+    assertEquals(GameStatus.Draw(DrawReason.FIFTY_MOVE_RULE), finishedState.gameStatus)
+    assertNull(finishedState.claimableDrawReason)
+    assertEquals(finishedState, finishedState.reduceBoardClick(Square(ChessFile.E, ChessRank.EIGHT)))
   }
 
   private fun promotionState(): OfflineGameState =
@@ -256,5 +291,6 @@ class OfflineGameUpdateTest {
     const val PromotionPositionFenValue = "7k/P7/8/8/8/8/8/7K w - - 0 1"
     const val BeforeStalemateFenValue = "7k/4Q3/6K1/8/8/8/8/8 w - - 0 1"
     const val BeforeCheckFenValue = "4k3/8/8/8/8/8/3Q4/4K3 w - - 0 1"
+    const val BeforeFiftyMoveDrawFenValue = "4k3/8/8/8/8/8/8/4K2R w - - 99 51"
   }
 }

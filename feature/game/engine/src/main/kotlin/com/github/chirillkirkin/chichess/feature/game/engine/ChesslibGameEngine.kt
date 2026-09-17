@@ -14,6 +14,7 @@ import com.github.chirillkirkin.chichess.feature.game.domain.ChessMove
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessPiece
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessPosition
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessRank
+import com.github.chirillkirkin.chichess.feature.game.domain.DrawReason
 import com.github.chirillkirkin.chichess.feature.game.domain.Fen
 import com.github.chirillkirkin.chichess.feature.game.domain.GameStatus
 import com.github.chirillkirkin.chichess.feature.game.domain.MoveApplicationResult
@@ -23,6 +24,10 @@ import com.github.chirillkirkin.chichess.feature.game.domain.PieceType
 import com.github.chirillkirkin.chichess.feature.game.domain.PromotionPiece
 import com.github.chirillkirkin.chichess.feature.game.domain.Square
 import javax.inject.Inject
+
+private const val FiftyMoveHalfMoveCount = 100
+private const val SeventyFiveMoveHalfMoveCount = 150
+private const val AutomaticRepetitionCount = 5
 
 class ChesslibGameEngine @Inject constructor() : ChessGameEngine {
   override fun legalMoves(position: ChessPosition): Set<ChessMove> =
@@ -41,11 +46,23 @@ class ChesslibGameEngine @Inject constructor() : ChessGameEngine {
   }
 
   override fun gameStatus(position: ChessPosition): GameStatus {
-    val board = position.toChesslibBoard()
+    val board = position.toChesslibBoardWithHistory()
     return when {
       board.isMated -> GameStatus.Checkmate(winner = board.sideToMove.flip().toDomainPieceColor())
-      board.isStaleMate -> GameStatus.Stalemate
+      board.isStaleMate -> GameStatus.Draw(DrawReason.STALEMATE)
+      board.isInsufficientMaterial -> GameStatus.Draw(DrawReason.INSUFFICIENT_MATERIAL)
+      board.isRepetition(AutomaticRepetitionCount) -> GameStatus.Draw(DrawReason.FIVEFOLD_REPETITION)
+      board.halfMoveCounter >= SeventyFiveMoveHalfMoveCount -> GameStatus.Draw(DrawReason.SEVENTY_FIVE_MOVE_RULE)
       else -> GameStatus.Ongoing
+    }
+  }
+
+  override fun claimableDrawReason(position: ChessPosition): DrawReason? {
+    val board = position.toChesslibBoardWithHistory()
+    return when {
+      board.isRepetition -> DrawReason.THREEFOLD_REPETITION
+      board.halfMoveCounter >= FiftyMoveHalfMoveCount -> DrawReason.FIFTY_MOVE_RULE
+      else -> null
     }
   }
 
@@ -81,7 +98,7 @@ class ChesslibGameEngine @Inject constructor() : ChessGameEngine {
       return MoveApplicationResult.Rejected(MoveRejectionReason.ILLEGAL_MOVE)
     }
 
-    return MoveApplicationResult.Applied(board.toDomainPosition())
+    return MoveApplicationResult.Applied(board.toDomainPosition(position, candidate.toDomainMove()))
   }
 }
 
@@ -92,7 +109,22 @@ private fun ChessPosition.toChesslibBoard(): Board {
   }
 }
 
-private fun Board.toDomainPosition(): ChessPosition {
+private fun ChessPosition.toChesslibBoardWithHistory(): Board =
+  Board().apply {
+    loadFromFen(historyStartFen.value)
+    moveHistory.forEach { move ->
+      val chesslibMove =
+        move.promotion?.let { promotion ->
+          Move(move.from.toChesslibSquare(), move.to.toChesslibSquare(), promotion.toChesslibPiece(sideToMove.toDomainPieceColor()))
+        } ?: Move(move.from.toChesslibSquare(), move.to.toChesslibSquare())
+      check(doMove(chesslibMove, true)) { "Cannot replay game history" }
+    }
+  }
+
+private fun Board.toDomainPosition(
+  previousPosition: ChessPosition,
+  appliedMove: ChessMove,
+): ChessPosition {
   val pieces =
     buildMap {
       ChessRank.entries.forEach { rank ->
@@ -110,6 +142,8 @@ private fun Board.toDomainPosition(): ChessPosition {
     fen = Fen(fen),
     pieces = pieces,
     sideToMove = sideToMove.toDomainPieceColor(),
+    historyStartFen = previousPosition.historyStartFen,
+    moveHistory = previousPosition.moveHistory + appliedMove,
   )
 }
 

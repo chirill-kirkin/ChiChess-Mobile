@@ -2,4 +2,10 @@
     <string name="white_wins_by_checkmate">White wins by checkmate</string>
     <string name="black_wins_by_checkmate">Black wins by checkmate</string>
     <string name="draw_by_stalemate">Draw by stalemate</string>
+    <string name="draw_by_threefold_repetition">Draw by threefold repetition</string>
+    <string name="draw_by_fifty_move_rule">Draw by the fifty-move rule</string>
+    <string name="draw_by_fivefold_repetition">Draw by fivefold repetition</string>
+    <string name="draw_by_seventy_five_move_rule">Draw by the seventy-five-move rule</string>
+    <string name="draw_by_insufficient_material">Draw by insufficient material</string>
+    <string name="claim_draw">Claim draw</string>
 </resources>
