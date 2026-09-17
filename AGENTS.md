@@ -72,6 +72,7 @@ The active game dependency graph is:
 - Shared visual values belong to `:core:designsystem`; feature modules must reuse them instead of defining copies.
 - Access application-specific typography through `ChiChessTheme.typography`. Its defaults may delegate to Material typography, but feature code does not access Material typography directly for application-specific styles.
 - Keep chess piece vector drawables in `:core:designsystem` and name them `ic_piece_{white|black}_{piece}`.
+- Keep user-facing text in string resources owned by the module that displays it. Provide Russian (`values-ru`) translations for new strings while retaining English defaults in `values`; keep the ChiChess app name in `:app`.
 
 ## MVU and dependency injection
 

@@ -1,0 +1,11 @@
+<resources>
+    <string name="white_wins_by_checkmate">Белые победили матом</string>
+    <string name="black_wins_by_checkmate">Чёрные победили матом</string>
+    <string name="draw_by_stalemate">Ничья: пат</string>
+    <string name="draw_by_threefold_repetition">Ничья: троекратное повторение позиции</string>
+    <string name="draw_by_fifty_move_rule">Ничья: правило 50 ходов</string>
+    <string name="draw_by_fivefold_repetition">Ничья: пятикратное повторение позиции</string>
+    <string name="draw_by_seventy_five_move_rule">Ничья: правило 75 ходов</string>
+    <string name="draw_by_insufficient_material">Ничья: недостаточно материала для мата</string>
+    <string name="claim_draw">Заявить ничью</string>
+</resources>

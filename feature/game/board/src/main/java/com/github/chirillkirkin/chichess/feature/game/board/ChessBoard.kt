@@ -23,9 +23,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
@@ -81,7 +78,6 @@ fun ChessBoard(
   onPromotionSelected: (PromotionPiece) -> Unit = {},
   onPromotionDismissed: () -> Unit = {},
 ) {
-  val boardDescription = stringResource(R.string.initial_chess_board_description)
   val colors = ChiChessTheme.colors
 
   BoxWithConstraints(
@@ -90,14 +86,7 @@ fun ChessBoard(
   ) {
     val boardSize = minOf(maxWidth, maxHeight)
 
-    Column(
-      modifier =
-        Modifier
-          .size(boardSize)
-          .semantics {
-            contentDescription = boardDescription
-          },
-    ) {
+    Column(modifier = Modifier.size(boardSize)) {
       ChessRank.entries.asReversed().forEach { rank ->
         Row(modifier = Modifier.fillMaxWidth().weight(EqualBoardSegmentWeight)) {
           ChessFile.entries.forEach { file ->
@@ -107,12 +96,6 @@ fun ChessBoard(
             val isCheckedKing = square == state.checkedKingSquare
             val squareColor = square.color.toBoardColor(colors).withHighlight(isCheckedKing, isSelected, isLegalTarget, colors)
             val coordinateColor = square.color.toCoordinateColor(colors)
-            val squareDescription =
-              stringResource(
-                R.string.chess_square_description,
-                file.notation.toString(),
-                rank.notation,
-              )
             val piece = state.position[square]
 
             Box(
@@ -126,10 +109,7 @@ fun ChessBoard(
                     interactionSource = null,
                     indication = null,
                     onClick = { onSquareClick(square) },
-                  )
-                  .semantics {
-                    contentDescription = squareDescription
-                  },
+                  ),
               contentAlignment = Alignment.Center,
             ) {
               if (piece != null) {
