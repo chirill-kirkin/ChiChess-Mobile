@@ -43,6 +43,9 @@ fun OfflineGameScreen(
         onMessage(OfflineGameMessage.Board(BoardMessage.SquareClick(square)))
       },
       modifier = Modifier.fillMaxSize(),
+      promotionSquare = state.pendingPromotion?.to,
+      onPromotionSelected = { piece -> onMessage(OfflineGameMessage.PromotionSelected(piece)) },
+      onPromotionDismissed = { onMessage(OfflineGameMessage.PromotionDismissed) },
     )
   }
 }

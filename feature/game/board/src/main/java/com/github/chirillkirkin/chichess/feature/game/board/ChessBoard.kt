@@ -2,6 +2,7 @@ package com.github.chirillkirkin.chichess.feature.game.board
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,6 +26,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.window.PopupProperties
 import com.github.chirillkirkin.chichess.core.designsystem.theme.ChiChessColors
 import com.github.chirillkirkin.chichess.core.designsystem.theme.ChiChessTheme
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessFile
@@ -30,17 +41,45 @@ import com.github.chirillkirkin.chichess.feature.game.domain.ChessPiece
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessRank
 import com.github.chirillkirkin.chichess.feature.game.domain.PieceColor
 import com.github.chirillkirkin.chichess.feature.game.domain.PieceType
+import com.github.chirillkirkin.chichess.feature.game.domain.PromotionPiece
 import com.github.chirillkirkin.chichess.feature.game.domain.Square
 import com.github.chirillkirkin.chichess.feature.game.domain.SquareColor
 import com.github.chirillkirkin.chichess.core.designsystem.R as DesignSystemR
 
 private const val EqualBoardSegmentWeight = 1f
+private val PromotionPieceSize = 48.dp
+
+private object PromotionMenuPositionProvider : PopupPositionProvider {
+  override fun calculatePosition(
+    anchorBounds: IntRect,
+    windowSize: IntSize,
+    layoutDirection: LayoutDirection,
+    popupContentSize: IntSize,
+  ): IntOffset {
+    val preferredX =
+      when (layoutDirection) {
+        LayoutDirection.Ltr -> anchorBounds.left
+        LayoutDirection.Rtl -> anchorBounds.right - popupContentSize.width
+      }
+    val belowAnchor = anchorBounds.bottom
+    val aboveAnchor = anchorBounds.top - popupContentSize.height
+    val preferredY = if (belowAnchor + popupContentSize.height <= windowSize.height) belowAnchor else aboveAnchor
+
+    return IntOffset(
+      x = preferredX.coerceIn(0, (windowSize.width - popupContentSize.width).coerceAtLeast(0)),
+      y = preferredY.coerceIn(0, (windowSize.height - popupContentSize.height).coerceAtLeast(0)),
+    )
+  }
+}
 
 @Composable
 fun ChessBoard(
   state: BoardState,
   onSquareClick: (Square) -> Unit,
   modifier: Modifier = Modifier,
+  promotionSquare: Square? = null,
+  onPromotionSelected: (PromotionPiece) -> Unit = {},
+  onPromotionDismissed: () -> Unit = {},
 ) {
   val boardDescription = stringResource(R.string.initial_chess_board_description)
   val colors = ChiChessTheme.colors
@@ -124,6 +163,14 @@ fun ChessBoard(
                   style = ChiChessTheme.typography.boardCoordinate,
                 )
               }
+
+              if (square == promotionSquare) {
+                PromotionMenu(
+                  color = state.position.sideToMove,
+                  onPieceSelected = onPromotionSelected,
+                  onDismiss = onPromotionDismissed,
+                )
+              }
             }
           }
         }
@@ -131,6 +178,51 @@ fun ChessBoard(
     }
   }
 }
+
+@Composable
+private fun PromotionMenu(
+  color: PieceColor,
+  onPieceSelected: (PromotionPiece) -> Unit,
+  onDismiss: () -> Unit,
+) {
+  Popup(
+    popupPositionProvider = PromotionMenuPositionProvider,
+    onDismissRequest = onDismiss,
+    properties = PopupProperties(focusable = true),
+  ) {
+    Surface(
+      shape = MenuDefaults.shape,
+      color = MenuDefaults.containerColor,
+      shadowElevation = MenuDefaults.ShadowElevation,
+    ) {
+      Column {
+        PromotionPiece.entries.forEach { promotionPiece ->
+          Box(
+            modifier =
+              Modifier
+                .size(PromotionPieceSize)
+                .clickable { onPieceSelected(promotionPiece) },
+          ) {
+            Image(
+              painter = painterResource(ChessPiece(color, promotionPiece.toPieceType()).drawableResource()),
+              contentDescription = null,
+              modifier = Modifier.fillMaxSize(),
+              contentScale = ContentScale.Fit,
+            )
+          }
+        }
+      }
+    }
+  }
+}
+
+private fun PromotionPiece.toPieceType(): PieceType =
+  when (this) {
+    PromotionPiece.QUEEN -> PieceType.QUEEN
+    PromotionPiece.ROOK -> PieceType.ROOK
+    PromotionPiece.BISHOP -> PieceType.BISHOP
+    PromotionPiece.KNIGHT -> PieceType.KNIGHT
+  }
 
 private fun Color.withHighlight(
   isSelected: Boolean,
