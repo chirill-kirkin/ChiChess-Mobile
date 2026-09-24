@@ -7,8 +7,8 @@ import com.github.chirillkirkin.chichess.core.data.session.DataStoreGuestSession
 import com.github.chirillkirkin.chichess.core.data.session.GuestSessionStorage
 import com.github.chirillkirkin.chichess.core.data.session.RemoteGuestSessionRepository
 import com.github.chirillkirkin.chichess.core.domain.session.GuestSessionRepository
-import com.github.chirillkirkin.chichess.feature.game.online.OnlineGameRepository
-import com.github.chirillkirkin.chichess.feature.game.online.RemoteOnlineGameRepository
+import com.github.chirillkirkin.chichess.feature.game.online.data.RemoteOnlineGameRepository
+import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
