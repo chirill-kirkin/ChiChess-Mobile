@@ -1,6 +1,8 @@
 package com.github.chirillkirkin.chichess.feature.game.domain
 
 interface ChessGameEngine {
+  fun positionFromFen(fen: Fen): ChessPosition
+
   fun legalMoves(position: ChessPosition): Set<ChessMove>
 
   fun checkedKingSquare(position: ChessPosition): Square?

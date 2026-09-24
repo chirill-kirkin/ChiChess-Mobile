@@ -99,6 +99,21 @@ class ChesslibGameEngineTest {
   }
 
   @Test
+  fun `positionFromFen restores pieces, side to move, and legality`() {
+    val position = engine.positionFromFen(Fen(AfterE4FenValue))
+
+    assertEquals(PieceColor.BLACK, position.sideToMove)
+    assertEquals(ChessPiece(PieceColor.WHITE, PieceType.PAWN), position[Square(ChessFile.E, ChessRank.FOUR)])
+    assertNull(position[Square(ChessFile.E, ChessRank.TWO)])
+    assertTrue(
+      ChessMove(
+        from = Square(ChessFile.E, ChessRank.SEVEN),
+        to = Square(ChessFile.E, ChessRank.FIVE),
+      ) in engine.legalMoves(position),
+    )
+  }
+
+  @Test
   fun `initial position remains ongoing`() {
     assertEquals(GameStatus.Ongoing, engine.gameStatus(initialChessPosition()))
   }
@@ -263,6 +278,7 @@ class ChesslibGameEngineTest {
 
   private companion object {
     const val InitialLegalMoveCount = 20
+    const val AfterE4FenValue = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
     const val PromotionPositionFenValue = "7k/P7/8/8/8/8/8/7K w - - 0 1"
     const val CheckFenValue = "4k3/8/8/8/8/8/4Q3/4K3 b - - 0 1"
     const val CheckmateFenValue = "7k/6Q1/5K2/8/8/8/8/8 b - - 0 1"

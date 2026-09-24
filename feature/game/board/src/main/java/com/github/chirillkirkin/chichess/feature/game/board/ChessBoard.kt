@@ -74,11 +74,16 @@ fun ChessBoard(
   state: BoardState,
   onSquareClick: (Square) -> Unit,
   modifier: Modifier = Modifier,
+  perspective: PieceColor = PieceColor.WHITE,
   promotionSquare: Square? = null,
   onPromotionSelected: (PromotionPiece) -> Unit = {},
   onPromotionDismissed: () -> Unit = {},
 ) {
   val colors = ChiChessTheme.colors
+  val ranks = if (perspective == PieceColor.WHITE) ChessRank.entries.asReversed() else ChessRank.entries
+  val files = if (perspective == PieceColor.WHITE) ChessFile.entries else ChessFile.entries.asReversed()
+  val leftFile = files.first()
+  val bottomRank = ranks.last()
 
   BoxWithConstraints(
     modifier = modifier,
@@ -87,9 +92,9 @@ fun ChessBoard(
     val boardSize = minOf(maxWidth, maxHeight)
 
     Column(modifier = Modifier.size(boardSize)) {
-      ChessRank.entries.asReversed().forEach { rank ->
+      ranks.forEach { rank ->
         Row(modifier = Modifier.fillMaxWidth().weight(EqualBoardSegmentWeight)) {
-          ChessFile.entries.forEach { file ->
+          files.forEach { file ->
             val square = Square(file, rank)
             val isSelected = square == state.selectedSquare
             val isLegalTarget = square in state.legalTargets
@@ -121,7 +126,7 @@ fun ChessBoard(
                 )
               }
 
-              if (file == ChessFile.A) {
+              if (file == leftFile) {
                 Text(
                   text = rank.notation.toString(),
                   modifier =
@@ -133,7 +138,7 @@ fun ChessBoard(
                 )
               }
 
-              if (rank == ChessRank.ONE) {
+              if (rank == bottomRank) {
                 Text(
                   text = file.notation.toString(),
                   modifier =

@@ -30,6 +30,15 @@ private const val SeventyFiveMoveHalfMoveCount = 150
 private const val AutomaticRepetitionCount = 5
 
 class ChesslibGameEngine @Inject constructor() : ChessGameEngine {
+  override fun positionFromFen(fen: Fen): ChessPosition {
+    val board = Board().apply { loadFromFen(fen.value) }
+    return ChessPosition.fromSnapshot(
+      fen = fen,
+      pieces = board.readPieces(),
+      sideToMove = board.sideToMove.toDomainPieceColor(),
+    )
+  }
+
   override fun legalMoves(position: ChessPosition): Set<ChessMove> =
     position
       .toChesslibBoard()
@@ -121,31 +130,30 @@ private fun ChessPosition.toChesslibBoardWithHistory(): Board =
     }
   }
 
-private fun Board.toDomainPosition(
-  previousPosition: ChessPosition,
-  appliedMove: ChessMove,
-): ChessPosition {
-  val pieces =
-    buildMap {
-      ChessRank.entries.forEach { rank ->
-        ChessFile.entries.forEach { file ->
-          val square = Square(file = file, rank = rank)
-          val piece = getPiece(square.toChesslibSquare())
-          if (piece != Piece.NONE) {
-            put(square, piece.toDomainPiece())
-          }
+private fun Board.readPieces(): Map<Square, ChessPiece> =
+  buildMap {
+    ChessRank.entries.forEach { rank ->
+      ChessFile.entries.forEach { file ->
+        val square = Square(file = file, rank = rank)
+        val piece = getPiece(square.toChesslibSquare())
+        if (piece != Piece.NONE) {
+          put(square, piece.toDomainPiece())
         }
       }
     }
+  }
 
-  return ChessPosition.fromSnapshot(
+private fun Board.toDomainPosition(
+  previousPosition: ChessPosition,
+  appliedMove: ChessMove,
+): ChessPosition =
+  ChessPosition.fromSnapshot(
     fen = Fen(fen),
-    pieces = pieces,
+    pieces = readPieces(),
     sideToMove = sideToMove.toDomainPieceColor(),
     historyStartFen = previousPosition.historyStartFen,
     moveHistory = previousPosition.moveHistory + appliedMove,
   )
-}
 
 private fun Move.toDomainMove(): ChessMove =
   ChessMove(

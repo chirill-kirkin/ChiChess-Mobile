@@ -67,6 +67,9 @@ class OfflineGameUpdateTest {
     val secondTarget = Square(ChessFile.D, ChessRank.THREE)
     val fakeEngine =
       object : ChessGameEngine {
+        override fun positionFromFen(fen: Fen): ChessPosition =
+          error("This test only selects pieces")
+
         override fun legalMoves(position: ChessPosition): Set<ChessMove> =
           setOf(
             ChessMove(firstPiece, firstTarget),
