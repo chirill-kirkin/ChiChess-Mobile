@@ -5,8 +5,6 @@ import com.github.chirillkirkin.chichess.core.domain.session.GuestSessionReposit
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.post
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 internal const val GUEST_SESSION_PATH = "/sessions/guest"
 
@@ -14,18 +12,9 @@ class RemoteGuestSessionRepository(
   private val httpClient: HttpClient,
   private val sessionStorage: GuestSessionStorage,
 ) : GuestSessionRepository {
-  // Serialize bootstrapping so concurrent callers create at most one session.
-  private val mutex = Mutex()
-  private var cached: GuestSession? = null
-
-  override suspend fun currentSession(): GuestSession {
-    cached?.let { return it }
-    return mutex.withLock {
-      cached?.let { return it }
-      val session = sessionStorage.read() ?: createSession()
-      session.also { cached = it }
-    }
-  }
+  // The bootstrap runs only when nothing is stored, so a session is created at most once per install.
+  override suspend fun currentSession(): GuestSession =
+    sessionStorage.read() ?: createSession()
 
   private suspend fun createSession(): GuestSession {
     val session = httpClient.post(GUEST_SESSION_PATH).body<GuestSessionResponse>().toGuestSession()
