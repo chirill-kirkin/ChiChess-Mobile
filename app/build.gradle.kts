@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.compose.compiler)
@@ -5,6 +7,12 @@ plugins {
   alias(libs.plugins.dagger.hilt)
   alias(libs.plugins.ksp)
 }
+
+private val serverUrl: String =
+  Properties().apply {
+    rootProject.file("local.properties").inputStream().use { load(it) }
+  }.getProperty("chichess.serverUrl")
+    ?: error("Missing `chichess.serverUrl` in local.properties (e.g. http://10.0.2.2:8080)")
 
 android {
     namespace = "com.github.chirillkirkin.chichess"
@@ -15,6 +23,8 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
+
+        buildConfigField("String", "SERVER_URL", "\"$serverUrl\"")
     }
 
     buildTypes {
@@ -30,7 +40,7 @@ android {
     buildFeatures {
       compose = true
       aidl = false
-      buildConfig = false
+      buildConfig = true
       shaders = false
     }
 
@@ -46,8 +56,13 @@ kotlin {
 }
 
 dependencies {
-  // Modules
+  // Core modules
   implementation(project(":core:designsystem"))
+  implementation(project(":core:domain"))
+  implementation(project(":core:data"))
+  implementation(project(":core:data:network"))
+
+  // Feature modules
   implementation(project(":feature:game:domain"))
   implementation(project(":feature:game:engine"))
   implementation(project(":feature:game:offline"))
