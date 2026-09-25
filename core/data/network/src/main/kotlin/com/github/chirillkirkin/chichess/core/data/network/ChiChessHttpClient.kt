@@ -8,6 +8,7 @@ import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.http.takeFrom
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
@@ -44,7 +45,10 @@ fun createChiChessHttpClient(baseUrl: String): HttpClient =
     configureChiChessClient(baseUrl)
   }
 
-/** Authenticated client for game endpoints; attaches a bearer token from [tokenProvider]. */
+/**
+ * Authenticated client for game HTTP endpoints and the live game WebSocket; attaches a bearer token
+ * from [tokenProvider], including on the WebSocket handshake.
+ */
 fun createAuthenticatedChiChessHttpClient(
   baseUrl: String,
   tokenProvider: BearerTokenProvider,
@@ -52,4 +56,5 @@ fun createAuthenticatedChiChessHttpClient(
   HttpClient(OkHttp) {
     configureChiChessClient(baseUrl)
     installBearerAuth(tokenProvider)
+    install(WebSockets)
   }

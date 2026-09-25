@@ -84,27 +84,27 @@ internal fun GameSnapshotResponse.toSnapshot(): OnlineGameSnapshot =
     terminationReason = terminationReason?.toTerminationReason(),
   )
 
-private fun ApiPieceColor.toPieceColor(): PieceColor =
+internal fun ApiPieceColor.toPieceColor(): PieceColor =
   when (this) {
     ApiPieceColor.WHITE -> PieceColor.WHITE
     ApiPieceColor.BLACK -> PieceColor.BLACK
   }
 
-private fun ApiGameStatus.toStatus(): OnlineGameStatus =
+internal fun ApiGameStatus.toStatus(): OnlineGameStatus =
   when (this) {
     ApiGameStatus.WAITING_FOR_OPPONENT -> OnlineGameStatus.WAITING_FOR_OPPONENT
     ApiGameStatus.IN_PROGRESS -> OnlineGameStatus.IN_PROGRESS
     ApiGameStatus.FINISHED -> OnlineGameStatus.FINISHED
   }
 
-private fun ApiGameResult.toResult(): OnlineGameResult =
+internal fun ApiGameResult.toResult(): OnlineGameResult =
   when (this) {
     ApiGameResult.WHITE_WON -> OnlineGameResult.WHITE_WON
     ApiGameResult.BLACK_WON -> OnlineGameResult.BLACK_WON
     ApiGameResult.DRAW -> OnlineGameResult.DRAW
   }
 
-private fun ApiTerminationReason.toTerminationReason(): OnlineTerminationReason =
+internal fun ApiTerminationReason.toTerminationReason(): OnlineTerminationReason =
   when (this) {
     ApiTerminationReason.CHECKMATE -> OnlineTerminationReason.CHECKMATE
     ApiTerminationReason.STALEMATE -> OnlineTerminationReason.STALEMATE

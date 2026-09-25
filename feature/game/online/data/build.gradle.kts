@@ -32,7 +32,9 @@ dependencies {
   implementation(project(":feature:game:domain"))
 
   implementation(libs.ktor.client.core)
+  implementation(libs.ktor.client.websockets)
   implementation(libs.kotlinx.serialization.json)
+  implementation(libs.kotlinx.coroutines.core)
 
   testImplementation(libs.kotlin.test.junit5)
   testImplementation(libs.kotlinx.coroutines.test)
