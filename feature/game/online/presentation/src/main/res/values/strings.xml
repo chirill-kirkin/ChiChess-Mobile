@@ -1,0 +1,31 @@
+<resources>
+    <string name="online_connecting">Connecting…</string>
+    <string name="online_disconnected">Disconnected</string>
+    <string name="online_waiting_for_opponent">Waiting for an opponent…</string>
+
+    <string name="online_resign">Resign</string>
+    <string name="online_offer_draw">Offer draw</string>
+    <string name="online_draw_offer_sent">Draw offer sent</string>
+    <string name="online_opponent_offered_draw">Opponent offers a draw</string>
+    <string name="online_accept_draw">Accept</string>
+    <string name="online_decline_draw">Decline</string>
+
+    <string name="online_white_wins_by_checkmate">White wins by checkmate</string>
+    <string name="online_black_wins_by_checkmate">Black wins by checkmate</string>
+    <string name="online_white_wins_by_resignation">White wins by resignation</string>
+    <string name="online_black_wins_by_resignation">Black wins by resignation</string>
+    <string name="online_draw_by_agreement">Draw by agreement</string>
+    <string name="online_draw_by_stalemate">Draw by stalemate</string>
+    <string name="online_draw_by_insufficient_material">Draw by insufficient material</string>
+    <string name="online_draw_by_threefold_repetition">Draw by threefold repetition</string>
+    <string name="online_draw_by_fivefold_repetition">Draw by fivefold repetition</string>
+    <string name="online_draw_by_fifty_move_rule">Draw by the fifty-move rule</string>
+    <string name="online_draw_by_seventy_five_move_rule">Draw by the seventy-five-move rule</string>
+
+    <string name="online_error_illegal_move">Illegal move</string>
+    <string name="online_error_not_your_turn">Not your turn</string>
+    <string name="online_error_game_not_ready">Waiting for an opponent</string>
+    <string name="online_error_game_finished">The game is over</string>
+    <string name="online_error_draw_not_claimable">Draw cannot be claimed</string>
+    <string name="online_error_generic">Move rejected</string>
+</resources>

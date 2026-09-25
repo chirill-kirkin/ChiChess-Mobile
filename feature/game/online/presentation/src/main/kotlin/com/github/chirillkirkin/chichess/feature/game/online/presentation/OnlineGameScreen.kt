@@ -1,0 +1,205 @@
+package com.github.chirillkirkin.chichess.feature.game.online.presentation
+
+import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.github.chirillkirkin.chichess.core.designsystem.theme.ChiChessTheme
+import com.github.chirillkirkin.chichess.feature.game.board.BoardMessage
+import com.github.chirillkirkin.chichess.feature.game.board.BoardState
+import com.github.chirillkirkin.chichess.feature.game.board.ChessBoard
+import com.github.chirillkirkin.chichess.feature.game.domain.PieceColor
+import com.github.chirillkirkin.chichess.feature.game.domain.initialChessPosition
+import com.github.chirillkirkin.chichess.feature.game.online.domain.CommandRejection
+import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameResult
+import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameStatus
+import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineTerminationReason
+
+private val ControlsSpace = 128.dp
+
+@Composable
+fun OnlineGameRoot(
+  gameId: String,
+  modifier: Modifier = Modifier,
+) {
+  val viewModel = hiltViewModel<OnlineGameViewModel, OnlineGameViewModel.Factory>(
+    creationCallback = { factory -> factory.create(gameId) },
+  )
+  val state by viewModel.state.collectAsStateWithLifecycle()
+
+  OnlineGameScreen(state = state, onMessage = viewModel::send, modifier = modifier)
+}
+
+@Composable
+fun OnlineGameScreen(
+  state: OnlineGameState,
+  onMessage: (OnlineGameMessage) -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  val board = state.board
+  if (board == null) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+      Text(text = connectionText(state.connection), style = ChiChessTheme.typography.gameResult)
+    }
+    return
+  }
+
+  BoxWithConstraints(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    val controlsSpace = ControlsSpace.coerceAtMost(maxHeight)
+    val boardSize = minOf(maxWidth, (maxHeight - controlsSpace).coerceAtLeast(0.dp))
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+      ChessBoard(
+        state = board,
+        onSquareClick = { onMessage(OnlineGameMessage.Board(BoardMessage.SquareClick(it))) },
+        perspective = state.yourColor ?: PieceColor.WHITE,
+        promotionSquare = state.pendingPromotion?.to,
+        onPromotionSelected = { onMessage(OnlineGameMessage.PromotionSelected(it)) },
+        onPromotionDismissed = { onMessage(OnlineGameMessage.PromotionDismissed) },
+        modifier = Modifier.size(boardSize),
+      )
+
+      Box(
+        modifier = Modifier.size(width = boardSize, height = controlsSpace),
+        contentAlignment = Alignment.TopCenter,
+      ) {
+        OnlineGameControls(state = state, onMessage = onMessage)
+      }
+    }
+  }
+}
+
+@Composable
+private fun OnlineGameControls(
+  state: OnlineGameState,
+  onMessage: (OnlineGameMessage) -> Unit,
+) {
+  val resultText = state.result?.let { resultRes(it, state.terminationReason) }?.let { stringResource(it) }
+
+  Column(
+    horizontalAlignment = Alignment.CenterHorizontally,
+    verticalArrangement = Arrangement.spacedBy(ChiChessTheme.spacing.medium),
+  ) {
+    when {
+      resultText != null -> Text(text = resultText, style = ChiChessTheme.typography.gameResult)
+      state.connection == ConnectionStatus.CLOSED ->
+        Text(text = stringResource(R.string.online_disconnected))
+      state.status == OnlineGameStatus.WAITING_FOR_OPPONENT ->
+        Text(text = stringResource(R.string.online_waiting_for_opponent))
+      else -> PlayingControls(state = state, onMessage = onMessage)
+    }
+  }
+}
+
+@Composable
+private fun PlayingControls(
+  state: OnlineGameState,
+  onMessage: (OnlineGameMessage) -> Unit,
+) {
+  val opponentOfferedDraw = state.pendingDrawOfferBy != null && state.pendingDrawOfferBy != state.yourColor
+
+  if (opponentOfferedDraw) {
+    Text(text = stringResource(R.string.online_opponent_offered_draw))
+    Row(horizontalArrangement = Arrangement.spacedBy(ChiChessTheme.spacing.medium)) {
+      Button(onClick = { onMessage(OnlineGameMessage.AcceptDraw) }) {
+        Text(text = stringResource(R.string.online_accept_draw))
+      }
+      Button(onClick = { onMessage(OnlineGameMessage.DeclineDraw) }) {
+        Text(text = stringResource(R.string.online_decline_draw))
+      }
+    }
+  } else {
+    Row(horizontalArrangement = Arrangement.spacedBy(ChiChessTheme.spacing.medium)) {
+      Button(onClick = { onMessage(OnlineGameMessage.Resign) }) {
+        Text(text = stringResource(R.string.online_resign))
+      }
+      if (state.pendingDrawOfferBy == null) {
+        Button(onClick = { onMessage(OnlineGameMessage.OfferDraw) }) {
+          Text(text = stringResource(R.string.online_offer_draw))
+        }
+      }
+    }
+    if (state.pendingDrawOfferBy == state.yourColor) {
+      Text(text = stringResource(R.string.online_draw_offer_sent))
+    }
+  }
+
+  state.moveError?.let { Text(text = stringResource(errorRes(it))) }
+}
+
+@Composable
+private fun connectionText(connection: ConnectionStatus): String =
+  stringResource(
+    if (connection == ConnectionStatus.CLOSED) R.string.online_disconnected else R.string.online_connecting,
+  )
+
+@StringRes
+private fun resultRes(result: OnlineGameResult, reason: OnlineTerminationReason?): Int? =
+  when (result) {
+    OnlineGameResult.WHITE_WON ->
+      when (reason) {
+        OnlineTerminationReason.CHECKMATE -> R.string.online_white_wins_by_checkmate
+        OnlineTerminationReason.RESIGNATION -> R.string.online_white_wins_by_resignation
+        else -> null
+      }
+    OnlineGameResult.BLACK_WON ->
+      when (reason) {
+        OnlineTerminationReason.CHECKMATE -> R.string.online_black_wins_by_checkmate
+        OnlineTerminationReason.RESIGNATION -> R.string.online_black_wins_by_resignation
+        else -> null
+      }
+    OnlineGameResult.DRAW ->
+      when (reason) {
+        OnlineTerminationReason.STALEMATE -> R.string.online_draw_by_stalemate
+        OnlineTerminationReason.AGREEMENT -> R.string.online_draw_by_agreement
+        OnlineTerminationReason.INSUFFICIENT_MATERIAL -> R.string.online_draw_by_insufficient_material
+        OnlineTerminationReason.THREEFOLD_REPETITION -> R.string.online_draw_by_threefold_repetition
+        OnlineTerminationReason.FIVEFOLD_REPETITION -> R.string.online_draw_by_fivefold_repetition
+        OnlineTerminationReason.FIFTY_MOVE_RULE -> R.string.online_draw_by_fifty_move_rule
+        OnlineTerminationReason.SEVENTY_FIVE_MOVE_RULE -> R.string.online_draw_by_seventy_five_move_rule
+        else -> null
+      }
+  }
+
+@StringRes
+private fun errorRes(reason: CommandRejection): Int =
+  when (reason) {
+    CommandRejection.ILLEGAL_MOVE -> R.string.online_error_illegal_move
+    CommandRejection.NOT_YOUR_TURN -> R.string.online_error_not_your_turn
+    CommandRejection.GAME_NOT_READY -> R.string.online_error_game_not_ready
+    CommandRejection.GAME_FINISHED -> R.string.online_error_game_finished
+    CommandRejection.DRAW_NOT_CLAIMABLE -> R.string.online_error_draw_not_claimable
+    else -> R.string.online_error_generic
+  }
+
+@Preview(name = "Phone", widthDp = 360, heightDp = 640, showBackground = true)
+@Composable
+private fun OnlineGameScreenPreview() {
+  ChiChessTheme(dynamicColor = false) {
+    OnlineGameScreen(
+      state = OnlineGameState(
+        gameId = "preview",
+        connection = ConnectionStatus.CONNECTED,
+        yourColor = PieceColor.WHITE,
+        board = BoardState(position = initialChessPosition()),
+        status = OnlineGameStatus.IN_PROGRESS,
+      ),
+      onMessage = {},
+    )
+  }
+}

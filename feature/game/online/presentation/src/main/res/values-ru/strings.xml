@@ -1,0 +1,31 @@
+<resources>
+    <string name="online_connecting">Подключение…</string>
+    <string name="online_disconnected">Соединение потеряно</string>
+    <string name="online_waiting_for_opponent">Ожидание соперника…</string>
+
+    <string name="online_resign">Сдаться</string>
+    <string name="online_offer_draw">Предложить ничью</string>
+    <string name="online_draw_offer_sent">Предложение ничьей отправлено</string>
+    <string name="online_opponent_offered_draw">Соперник предлагает ничью</string>
+    <string name="online_accept_draw">Принять</string>
+    <string name="online_decline_draw">Отклонить</string>
+
+    <string name="online_white_wins_by_checkmate">Белые победили матом</string>
+    <string name="online_black_wins_by_checkmate">Чёрные победили матом</string>
+    <string name="online_white_wins_by_resignation">Белые победили: соперник сдался</string>
+    <string name="online_black_wins_by_resignation">Чёрные победили: соперник сдался</string>
+    <string name="online_draw_by_agreement">Ничья по соглашению</string>
+    <string name="online_draw_by_stalemate">Ничья: пат</string>
+    <string name="online_draw_by_insufficient_material">Ничья: недостаточно материала для мата</string>
+    <string name="online_draw_by_threefold_repetition">Ничья: троекратное повторение позиции</string>
+    <string name="online_draw_by_fivefold_repetition">Ничья: пятикратное повторение позиции</string>
+    <string name="online_draw_by_fifty_move_rule">Ничья: правило 50 ходов</string>
+    <string name="online_draw_by_seventy_five_move_rule">Ничья: правило 75 ходов</string>
+
+    <string name="online_error_illegal_move">Недопустимый ход</string>
+    <string name="online_error_not_your_turn">Сейчас не ваш ход</string>
+    <string name="online_error_game_not_ready">Ожидание соперника</string>
+    <string name="online_error_game_finished">Партия завершена</string>
+    <string name="online_error_draw_not_claimable">Ничью нельзя заявить</string>
+    <string name="online_error_generic">Ход отклонён</string>
+</resources>
