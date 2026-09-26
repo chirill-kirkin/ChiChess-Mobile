@@ -77,6 +77,7 @@ dependencies {
   implementation(libs.androidx.activity.compose)
   implementation(libs.dagger.hilt.android)
   ksp(libs.dagger.hilt.compiler)
+  implementation(libs.timber)
 
   // Compose
   val composeBom = platform(libs.androidx.compose.bom)

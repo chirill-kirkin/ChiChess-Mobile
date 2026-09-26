@@ -34,7 +34,7 @@ object NetworkModule {
   @Provides
   @Singleton
   @BootstrapHttpClient
-  fun provideBootstrapHttpClient(): HttpClient = createChiChessHttpClient(BuildConfig.SERVER_URL)
+  fun provideBootstrapHttpClient(): HttpClient = createChiChessHttpClient(BuildConfig.SERVER_URL, BuildConfig.DEBUG)
 
   @Provides
   @Singleton
@@ -54,7 +54,7 @@ object NetworkModule {
   @AuthenticatedHttpClient
   fun provideAuthenticatedHttpClient(
     guestSessions: GuestSessionRepository,
-  ): HttpClient = createAuthenticatedChiChessHttpClient(BuildConfig.SERVER_URL) {
+  ): HttpClient = createAuthenticatedChiChessHttpClient(BuildConfig.SERVER_URL, BuildConfig.DEBUG) {
     guestSessions.currentSession().token
   }
 

@@ -35,6 +35,7 @@ dependencies {
   implementation(libs.ktor.client.websockets)
   implementation(libs.kotlinx.serialization.json)
   implementation(libs.kotlinx.coroutines.core)
+  implementation(libs.timber)
 
   testImplementation(libs.kotlin.test.junit5)
   testImplementation(libs.kotlinx.coroutines.test)

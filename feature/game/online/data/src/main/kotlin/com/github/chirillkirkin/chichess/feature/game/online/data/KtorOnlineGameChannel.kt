@@ -17,8 +17,10 @@ import io.ktor.websocket.close
 import io.ktor.websocket.readText
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import timber.log.Timber
 
 private const val GAME_SOCKET_SEGMENT = "game"
+private const val GAME_SOCKET_LOG_TAG = "GameSocket"
 
 class KtorOnlineGameChannel(
   private val httpClient: HttpClient,
@@ -43,10 +45,13 @@ private class KtorOnlineGameSession(
   override val events: Flow<OnlineGameEvent> = flow {
     for (frame in session.incoming) {
       if (frame is Frame.Text) {
-        emit(gameProtocolJson.decodeFromString(GameEvent.serializer(), frame.readText()).toOnlineEvent())
+        val text = frame.readText()
+        Timber.tag(GAME_SOCKET_LOG_TAG).v("← %s", text)
+        emit(gameProtocolJson.decodeFromString(GameEvent.serializer(), text).toOnlineEvent())
       }
     }
     val reason = session.closeReason.await()
+    Timber.tag(GAME_SOCKET_LOG_TAG).v("socket closed: code=%s reason=%s", reason?.code, reason?.message)
     emit(OnlineGameEvent.Closed(reason?.code, reason?.message))
   }
 
@@ -74,6 +79,8 @@ private class KtorOnlineGameSession(
   override suspend fun close() = session.close()
 
   private suspend fun send(command: GameCommand) {
-    session.send(Frame.Text(gameProtocolJson.encodeToString(GameCommand.serializer(), command)))
+    val text = gameProtocolJson.encodeToString(GameCommand.serializer(), command)
+    Timber.tag(GAME_SOCKET_LOG_TAG).v("→ %s", text)
+    session.send(Frame.Text(text))
   }
 }
