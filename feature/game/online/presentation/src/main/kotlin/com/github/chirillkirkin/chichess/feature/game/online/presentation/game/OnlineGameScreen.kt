@@ -1,19 +1,33 @@
-package com.github.chirillkirkin.chichess.feature.game.online.presentation
+package com.github.chirillkirkin.chichess.feature.game.online.presentation.game
 
+import android.content.ClipData
+import android.os.Build
 import androidx.annotation.StringRes
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -29,6 +43,8 @@ import com.github.chirillkirkin.chichess.feature.game.online.domain.CommandRejec
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameResult
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameStatus
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineTerminationReason
+import com.github.chirillkirkin.chichess.feature.game.online.presentation.R
+import kotlinx.coroutines.launch
 
 private val ControlsSpace = 128.dp
 
@@ -59,28 +75,52 @@ fun OnlineGameScreen(
     return
   }
 
-  BoxWithConstraints(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-    val controlsSpace = ControlsSpace.coerceAtMost(maxHeight)
-    val boardSize = minOf(maxWidth, (maxHeight - controlsSpace).coerceAtLeast(0.dp))
-
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-      ChessBoard(
-        state = board,
-        onSquareClick = { onMessage(OnlineGameMessage.Board(BoardMessage.SquareClick(it))) },
-        perspective = state.yourColor ?: PieceColor.WHITE,
-        promotionSquare = state.pendingPromotion?.to,
-        onPromotionSelected = { onMessage(OnlineGameMessage.PromotionSelected(it)) },
-        onPromotionDismissed = { onMessage(OnlineGameMessage.PromotionDismissed) },
-        modifier = Modifier.size(boardSize),
-      )
-
-      Box(
-        modifier = Modifier.size(width = boardSize, height = controlsSpace),
-        contentAlignment = Alignment.TopCenter,
-      ) {
-        OnlineGameControls(state = state, onMessage = onMessage)
+  val snackbarHostState = remember { SnackbarHostState() }
+  val clipboard = LocalClipboard.current
+  val scope = rememberCoroutineScope()
+  val clipLabel = stringResource(R.string.online_invite_code_hint)
+  val copiedMessage = stringResource(R.string.online_invite_code_copied)
+  val onCopyInviteCode: (String) -> Unit = { code ->
+    scope.launch {
+      clipboard.setClipEntry(ClipEntry(ClipData.newPlainText(clipLabel, code)))
+      // Android 13+ shows its own copy confirmation, so only add a snackbar on older versions.
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+        // Replace the visible confirmation so repeated taps refresh one snackbar instead of stacking.
+        snackbarHostState.currentSnackbarData?.dismiss()
+        snackbarHostState.showSnackbar(copiedMessage)
       }
     }
+  }
+
+  Box(modifier = modifier.fillMaxSize()) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+      // Reserve matching space above and below so the board stays centered with the controls right
+      // beneath it; the board is the largest square that fits what is left.
+      val boardSize = minOf(maxWidth, maxHeight - ControlsSpace * 2)
+
+      Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Spacer(modifier = Modifier.height(ControlsSpace))
+
+        ChessBoard(
+          state = board,
+          onSquareClick = { onMessage(OnlineGameMessage.Board(BoardMessage.SquareClick(it))) },
+          perspective = state.yourColor ?: PieceColor.WHITE,
+          promotionSquare = state.pendingPromotion?.to,
+          onPromotionSelected = { onMessage(OnlineGameMessage.PromotionSelected(it)) },
+          onPromotionDismissed = { onMessage(OnlineGameMessage.PromotionDismissed) },
+          modifier = Modifier.size(boardSize),
+        )
+
+        Box(
+          modifier = Modifier.size(width = boardSize, height = ControlsSpace),
+          contentAlignment = Alignment.TopCenter,
+        ) {
+          OnlineGameControls(state = state, onMessage = onMessage, onCopyInviteCode = onCopyInviteCode)
+        }
+      }
+    }
+
+    SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
   }
 }
 
@@ -88,6 +128,7 @@ fun OnlineGameScreen(
 private fun OnlineGameControls(
   state: OnlineGameState,
   onMessage: (OnlineGameMessage) -> Unit,
+  onCopyInviteCode: (String) -> Unit,
 ) {
   val resultText = state.result?.let { resultRes(it, state.terminationReason) }?.let { stringResource(it) }
 
@@ -99,8 +140,18 @@ private fun OnlineGameControls(
       resultText != null -> Text(text = resultText, style = ChiChessTheme.typography.gameResult)
       state.connection == ConnectionStatus.CLOSED ->
         Text(text = stringResource(R.string.online_disconnected))
-      state.status == OnlineGameStatus.WAITING_FOR_OPPONENT ->
+      state.status == OnlineGameStatus.WAITING_FOR_OPPONENT -> {
         Text(text = stringResource(R.string.online_waiting_for_opponent))
+        state.inviteCode?.let { code ->
+          Text(
+            text = stringResource(R.string.online_invite_code, code),
+            modifier = Modifier
+              .clip(RoundedCornerShape(percent = 50))
+              .clickable { onCopyInviteCode(code) }
+              .padding(horizontal = ChiChessTheme.spacing.medium, vertical = ChiChessTheme.spacing.small),
+          )
+        }
+      }
       else -> PlayingControls(state = state, onMessage = onMessage)
     }
   }
@@ -129,7 +180,11 @@ private fun PlayingControls(
         Text(text = stringResource(R.string.online_resign))
       }
       if (state.pendingDrawOfferBy == null) {
-        Button(onClick = { onMessage(OnlineGameMessage.OfferDraw) }) {
+        Button(
+          onClick = { onMessage(OnlineGameMessage.OfferDraw) },
+          // A draw cannot be offered before the first move has been played.
+          enabled = state.lastMove != null,
+        ) {
           Text(text = stringResource(R.string.online_offer_draw))
         }
       }

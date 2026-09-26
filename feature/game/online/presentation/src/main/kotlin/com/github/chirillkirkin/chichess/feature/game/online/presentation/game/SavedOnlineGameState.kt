@@ -1,4 +1,4 @@
-package com.github.chirillkirkin.chichess.feature.game.online.presentation
+package com.github.chirillkirkin.chichess.feature.game.online.presentation.game
 
 import android.os.Parcelable
 import com.github.chirillkirkin.chichess.feature.game.board.BoardState

@@ -28,4 +28,14 @@
     <string name="online_error_game_finished">The game is over</string>
     <string name="online_error_draw_not_claimable">Draw cannot be claimed</string>
     <string name="online_error_generic">Move rejected</string>
+
+    <string name="online_invite_code">Share this code: %1$s</string>
+    <string name="online_invite_code_copied">Invite code copied</string>
+    <string name="online_create_game">Create game</string>
+    <string name="online_join_game">Join</string>
+    <string name="online_invite_code_hint">Invite code</string>
+    <string name="online_join_error_not_found">No game with this code</string>
+    <string name="online_join_error_own_game">You can\'t join your own game</string>
+    <string name="online_join_error_already_joined">This game is already full</string>
+    <string name="online_join_error_generic">Could not join the game</string>
 </resources>

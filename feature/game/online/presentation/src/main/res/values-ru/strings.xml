@@ -28,4 +28,14 @@
     <string name="online_error_game_finished">Партия завершена</string>
     <string name="online_error_draw_not_claimable">Ничью нельзя заявить</string>
     <string name="online_error_generic">Ход отклонён</string>
+
+    <string name="online_invite_code">Код для соперника: %1$s</string>
+    <string name="online_invite_code_copied">Код скопирован</string>
+    <string name="online_create_game">Создать партию</string>
+    <string name="online_join_game">Войти</string>
+    <string name="online_invite_code_hint">Код приглашения</string>
+    <string name="online_join_error_not_found">Партия с таким кодом не найдена</string>
+    <string name="online_join_error_own_game">Нельзя войти в свою партию</string>
+    <string name="online_join_error_already_joined">В партии уже два игрока</string>
+    <string name="online_join_error_generic">Не удалось войти в партию</string>
 </resources>

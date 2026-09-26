@@ -1,4 +1,4 @@
-package com.github.chirillkirkin.chichess.feature.game.online.presentation
+package com.github.chirillkirkin.chichess.feature.game.online.presentation.game
 
 import com.github.chirillkirkin.chichess.feature.game.board.BoardMessage
 import com.github.chirillkirkin.chichess.feature.game.board.BoardState
@@ -24,14 +24,14 @@ internal fun onlineGameUpdate(
 ): Update<OnlineGameMessage, OnlineGameState, OnlineGameCommand> =
   update { message, state ->
     when (message) {
-      is OnlineGameMessage.Event -> onEvent(message.event, state, gameEngine)
+      is OnlineGameMessage.Event -> onEvent(message.event, state, gameEngine, newCommandId)
       is OnlineGameMessage.Board -> onBoardClick(message.message, state, gameEngine, newCommandId)
       is OnlineGameMessage.PromotionSelected -> onPromotionSelected(message.piece, state, gameEngine, newCommandId)
       OnlineGameMessage.PromotionDismissed -> state(state.copy(pendingPromotion = null))
       OnlineGameMessage.Resign ->
         if (state.canPlay()) command(OnlineGameCommand.SendResign(newCommandId(), state.revision))
       OnlineGameMessage.OfferDraw ->
-        if (state.canPlay() && state.pendingDrawOfferBy == null) command(OnlineGameCommand.SendOfferDraw(newCommandId()))
+        if (state.canOfferDraw()) command(OnlineGameCommand.SendOfferDraw(newCommandId()))
       OnlineGameMessage.AcceptDraw ->
         if (state.opponentOfferedDraw()) command(OnlineGameCommand.SendAcceptDraw(newCommandId()))
       OnlineGameMessage.DeclineDraw ->
@@ -46,6 +46,7 @@ private fun UpdateDsl<OnlineGameState, OnlineGameCommand>.onEvent(
   event: OnlineGameEvent,
   state: OnlineGameState,
   engine: ChessGameEngine,
+  newCommandId: () -> String,
 ) {
   when (event) {
     is OnlineGameEvent.Snapshot -> state(state.withSnapshot(event.snapshot, engine))
@@ -53,8 +54,8 @@ private fun UpdateDsl<OnlineGameState, OnlineGameCommand>.onEvent(
     is OnlineGameEvent.GameFinished -> state(state.finished(event))
     is OnlineGameEvent.DrawOffered -> state(state.copy(pendingDrawOfferBy = event.by))
     OnlineGameEvent.DrawDeclined -> state(state.copy(pendingDrawOfferBy = null))
-    // Socket presence only; the authoritative game status comes from snapshots.
-    is OnlineGameEvent.PlayerJoined -> Unit
+    // PLAYER_JOINED carries no status, so pull a fresh snapshot to learn the game is now in progress.
+    is OnlineGameEvent.PlayerJoined -> command(OnlineGameCommand.RequestSync(newCommandId()))
     is OnlineGameEvent.CommandRejected -> state(state.rolledBack(event.reason, engine))
     is OnlineGameEvent.Closed -> state(state.copy(connection = ConnectionStatus.CLOSED))
   }
@@ -131,9 +132,11 @@ private fun OnlineGameState.withSnapshot(
   val position = engine.positionFromFen(snapshot.fen)
   return copy(
     connection = ConnectionStatus.CONNECTED,
+    inviteCode = snapshot.inviteCode,
     yourColor = snapshot.yourColor,
     confirmedPosition = position,
     board = engine.boardOf(position),
+    lastMove = snapshot.lastMove,
     revision = snapshot.revision,
     status = snapshot.status,
     result = snapshot.result,
@@ -153,6 +156,7 @@ private fun OnlineGameState.withMoveApplied(
   return copy(
     confirmedPosition = position,
     board = engine.boardOf(position),
+    lastMove = event.lastMove,
     revision = event.revision,
     status = event.status,
     result = event.result,
@@ -209,3 +213,7 @@ private fun OnlineGameState.isYourTurn(): Boolean =
 
 private fun OnlineGameState.opponentOfferedDraw(): Boolean =
   pendingDrawOfferBy != null && pendingDrawOfferBy != yourColor
+
+// A draw cannot be offered before the first move has been played.
+private fun OnlineGameState.canOfferDraw(): Boolean =
+  canPlay() && pendingDrawOfferBy == null && lastMove != null

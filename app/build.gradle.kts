@@ -68,6 +68,7 @@ dependencies {
   implementation(project(":feature:game:offline"))
   implementation(project(":feature:game:online:domain"))
   implementation(project(":feature:game:online:data"))
+  implementation(project(":feature:game:online:presentation"))
   implementation(project(":feature:home:presentation"))
 
   // Core Android dependencies

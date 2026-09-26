@@ -1,3 +1,4 @@
 <resources>
     <string name="play_offline">Играть офлайн</string>
+    <string name="play_online">Играть онлайн</string>
 </resources>

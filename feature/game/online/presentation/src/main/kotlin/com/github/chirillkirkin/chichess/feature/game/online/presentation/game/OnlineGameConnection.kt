@@ -1,4 +1,4 @@
-package com.github.chirillkirkin.chichess.feature.game.online.presentation
+package com.github.chirillkirkin.chichess.feature.game.online.presentation.game
 
 import androidx.lifecycle.SavedStateHandle
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessGameEngine
@@ -31,6 +31,7 @@ class OnlineGameConnection(
     val session = session ?: return
     when (command) {
       OnlineGameCommand.Connect -> Unit
+      is OnlineGameCommand.RequestSync -> session.requestSync(command.commandId)
       is OnlineGameCommand.SendMove -> session.makeMove(command.commandId, command.expectedRevision, command.move)
       is OnlineGameCommand.SendResign -> session.resign(command.commandId, command.expectedRevision)
       is OnlineGameCommand.SendOfferDraw -> session.offerDraw(command.commandId)

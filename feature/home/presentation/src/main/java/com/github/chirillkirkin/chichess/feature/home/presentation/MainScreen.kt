@@ -26,18 +26,21 @@ private const val PreviewAppName = "Chess application"
 fun HomeRoot(
   appName: String,
   onOpenOfflineGame: () -> Unit,
+  onOpenOnlineLobby: () -> Unit,
   modifier: Modifier = Modifier,
   viewModel: HomeViewModel = hiltViewModel(),
 ) {
   val state by viewModel.state.collectAsStateWithLifecycle()
   val lifecycleOwner = LocalLifecycleOwner.current
   val currentOpenOfflineGame by rememberUpdatedState(onOpenOfflineGame)
+  val currentOpenOnlineLobby by rememberUpdatedState(onOpenOnlineLobby)
 
   LaunchedEffect(viewModel, lifecycleOwner) {
     lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
       viewModel.commands.collect { command ->
         when (command) {
           HomeCommand.OpenOfflineGame -> currentOpenOfflineGame()
+          HomeCommand.OpenOnlineLobby -> currentOpenOnlineLobby()
         }
       }
     }
@@ -73,6 +76,9 @@ fun MainScreen(
     )
     Button(onClick = { onMessage(HomeMessage.OfflineGameClick) }) {
       Text(text = stringResource(R.string.play_offline))
+    }
+    Button(onClick = { onMessage(HomeMessage.OnlineGameClick) }) {
+      Text(text = stringResource(R.string.play_online))
     }
   }
 }

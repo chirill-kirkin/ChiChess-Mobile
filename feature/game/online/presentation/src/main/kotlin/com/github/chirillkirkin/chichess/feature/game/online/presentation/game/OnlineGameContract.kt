@@ -1,4 +1,4 @@
-package com.github.chirillkirkin.chichess.feature.game.online.presentation
+package com.github.chirillkirkin.chichess.feature.game.online.presentation.game
 
 import com.github.chirillkirkin.chichess.feature.game.board.BoardMessage
 import com.github.chirillkirkin.chichess.feature.game.board.BoardState
@@ -24,10 +24,13 @@ data class PendingMove(
 data class OnlineGameState(
   val gameId: String,
   val connection: ConnectionStatus = ConnectionStatus.CONNECTING,
+  val inviteCode: String? = null,
   val yourColor: PieceColor? = null,
   // The last server-confirmed position; the board may show an optimistic move ahead of it.
   val confirmedPosition: ChessPosition? = null,
   val board: BoardState? = null,
+  // The last confirmed move, or null before the first move has been played.
+  val lastMove: ChessMove? = null,
   val revision: Long = 0L,
   val status: OnlineGameStatus = OnlineGameStatus.WAITING_FOR_OPPONENT,
   val result: OnlineGameResult? = null,
@@ -62,6 +65,8 @@ sealed interface OnlineGameMessage {
 
 sealed interface OnlineGameCommand {
   data object Connect : OnlineGameCommand
+
+  data class RequestSync(val commandId: String) : OnlineGameCommand
 
   data class SendMove(val commandId: String, val expectedRevision: Long, val move: ChessMove) : OnlineGameCommand
 

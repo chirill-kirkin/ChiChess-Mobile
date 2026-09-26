@@ -1,4 +1,4 @@
-package com.github.chirillkirkin.chichess.feature.game.online.presentation
+package com.github.chirillkirkin.chichess.feature.game.online.presentation.game
 
 import com.github.chirillkirkin.chichess.feature.game.board.BoardMessage
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessFile
@@ -142,6 +142,13 @@ class OnlineGameUpdateTest {
   }
 
   @Test
+  fun `player joined requests a fresh sync`() {
+    val result = update(OnlineGameMessage.Event(OnlineGameEvent.PlayerJoined(PieceColor.BLACK)), connected())
+
+    assertTrue(OnlineGameCommand.RequestSync(FIRST_COMMAND_ID) in result.commands)
+  }
+
+  @Test
   fun `clicks are ignored when it is not your turn`() {
     val connectedAsBlack = update(snapshot(PieceColor.BLACK), OnlineGameState(GAME_ID)).state
 
@@ -162,10 +169,19 @@ class OnlineGameUpdateTest {
   }
 
   @Test
-  fun `offer draw is sent while playing`() {
-    val result = update(OnlineGameMessage.OfferDraw, connected())
+  fun `offer draw is sent after the first move`() {
+    val afterMove = update(moveApplied(AFTER_E4_FEN, REVISION + 1), connected()).state
+
+    val result = update(OnlineGameMessage.OfferDraw, afterMove)
 
     assertTrue(OnlineGameCommand.SendOfferDraw(FIRST_COMMAND_ID) in result.commands)
+  }
+
+  @Test
+  fun `offer draw is blocked before the first move`() {
+    val result = update(OnlineGameMessage.OfferDraw, connected())
+
+    assertTrue(result.commands.isEmpty())
   }
 
   @Test

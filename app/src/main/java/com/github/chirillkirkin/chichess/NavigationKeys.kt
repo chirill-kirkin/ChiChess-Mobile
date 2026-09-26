@@ -8,3 +8,9 @@ data object HomeRoute : NavKey
 
 @Serializable
 data object OfflineGameRoute : NavKey
+
+@Serializable
+data object OnlineLobbyRoute : NavKey
+
+@Serializable
+data class OnlineGameRoute(val gameId: String) : NavKey

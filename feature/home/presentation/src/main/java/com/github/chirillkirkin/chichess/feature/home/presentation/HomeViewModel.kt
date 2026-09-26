@@ -15,16 +15,21 @@ data object HomeState
 
 sealed interface HomeMessage {
   data object OfflineGameClick : HomeMessage
+
+  data object OnlineGameClick : HomeMessage
 }
 
 sealed interface HomeCommand {
   data object OpenOfflineGame : HomeCommand
+
+  data object OpenOnlineLobby : HomeCommand
 }
 
 private val homeUpdate: Update<HomeMessage, HomeState, HomeCommand> =
   update { message, _ ->
     when (message) {
       HomeMessage.OfflineGameClick -> command(HomeCommand.OpenOfflineGame)
+      HomeMessage.OnlineGameClick -> command(HomeCommand.OpenOnlineLobby)
     }
   }
 

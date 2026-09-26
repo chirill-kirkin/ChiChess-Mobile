@@ -1,4 +1,4 @@
-package com.github.chirillkirkin.chichess.feature.game.online.presentation
+package com.github.chirillkirkin.chichess.feature.game.online.presentation.game
 
 import com.github.chirillkirkin.chichess.feature.game.domain.Fen
 import com.github.chirillkirkin.chichess.feature.game.domain.PieceColor
