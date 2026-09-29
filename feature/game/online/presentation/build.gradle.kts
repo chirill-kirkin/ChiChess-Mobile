@@ -43,6 +43,7 @@ dependencies {
   implementation(project(":mvu:android-savedstate"))
 
   implementation(libs.androidx.lifecycle.viewmodel.savedstate)
+  implementation(libs.androidx.lifecycle.process)
   implementation(libs.kotlinx.coroutines.core)
 
   implementation(platform(libs.androidx.compose.bom))

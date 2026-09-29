@@ -17,6 +17,11 @@ import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameSt
 import com.github.chirillkirkin.mvu.Update
 import com.github.chirillkirkin.mvu.UpdateDsl
 import com.github.chirillkirkin.mvu.update
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+
+private val InitialReconnectDelay = 1.seconds
+private val MaxReconnectDelay = 30.seconds
 
 internal fun onlineGameUpdate(
   gameEngine: ChessGameEngine,
@@ -39,6 +44,12 @@ internal fun onlineGameUpdate(
       OnlineGameMessage.ClaimDraw ->
         if (state.canPlay()) command(OnlineGameCommand.SendClaimDraw(newCommandId(), state.revision))
       OnlineGameMessage.DismissError -> state(state.copy(moveError = null))
+      OnlineGameMessage.AppForegrounded ->
+        if (state.connection != ConnectionStatus.CLOSED) {
+          state(state.copy(connection = ConnectionStatus.CONNECTING, reconnectAttempt = 0))
+          command(OnlineGameCommand.Connect())
+        }
+      OnlineGameMessage.AppBackgrounded -> command(OnlineGameCommand.Disconnect)
     }
   }
 
@@ -57,8 +68,29 @@ private fun UpdateDsl<OnlineGameState, OnlineGameCommand>.onEvent(
     // PLAYER_JOINED carries no status, so pull a fresh snapshot to learn the game is now in progress.
     is OnlineGameEvent.PlayerJoined -> command(OnlineGameCommand.RequestSync(newCommandId()))
     is OnlineGameEvent.CommandRejected -> state(state.rolledBack(event.reason, engine))
-    is OnlineGameEvent.Closed -> state(state.copy(connection = ConnectionStatus.CLOSED))
+    is OnlineGameEvent.Closed -> onClosed(event, state, engine)
   }
+}
+
+private fun UpdateDsl<OnlineGameState, OnlineGameCommand>.onClosed(
+  event: OnlineGameEvent.Closed,
+  state: OnlineGameState,
+  engine: ChessGameEngine,
+) {
+  val discarded = state.withoutPendingMove(engine)
+  if (event.permanent || state.result != null) {
+    state(discarded.copy(connection = ConnectionStatus.CLOSED))
+  } else {
+    val attempt = state.reconnectAttempt + 1
+    state(discarded.copy(connection = ConnectionStatus.CONNECTING, reconnectAttempt = attempt))
+    command(OnlineGameCommand.Connect(reconnectDelay(attempt)))
+  }
+}
+
+private fun reconnectDelay(attempt: Int): Duration {
+  var delay = InitialReconnectDelay
+  repeat(attempt - 1) { delay = minOf(delay * 2, MaxReconnectDelay) }
+  return delay
 }
 
 private fun UpdateDsl<OnlineGameState, OnlineGameCommand>.onBoardClick(
@@ -145,6 +177,7 @@ private fun OnlineGameState.withSnapshot(
     pendingMove = null,
     pendingPromotion = null,
     moveError = null,
+    reconnectAttempt = 0,
   )
 }
 
@@ -182,12 +215,16 @@ private fun OnlineGameState.rolledBack(
   reason: CommandRejection,
   engine: ChessGameEngine,
 ): OnlineGameState =
+  withoutPendingMove(engine).copy(
+    // A revision conflict is followed by a fresh snapshot, so it re-syncs instead of surfacing.
+    moveError = reason.takeUnless { it == CommandRejection.REVISION_CONFLICT },
+  )
+
+private fun OnlineGameState.withoutPendingMove(engine: ChessGameEngine): OnlineGameState =
   copy(
     board = confirmedPosition?.let(engine::boardOf) ?: board,
     pendingMove = null,
     pendingPromotion = null,
-    // A revision conflict is followed by a fresh snapshot, so it re-syncs instead of surfacing.
-    moveError = reason.takeUnless { it == CommandRejection.REVISION_CONFLICT },
   )
 
 private fun BoardState.select(

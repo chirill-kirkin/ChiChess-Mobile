@@ -19,6 +19,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
 
 private const val GAME_ID = "game-1"
 private const val INVITE_CODE = "INV0000000"
@@ -26,6 +27,9 @@ private const val REVISION = 3L
 private const val START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 private const val AFTER_E4_FEN = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
 private const val FIRST_COMMAND_ID = "cmd-1"
+
+private val EXPECTED_RECONNECT_DELAYS =
+  listOf(1.seconds, 2.seconds, 4.seconds, 8.seconds, 16.seconds, 30.seconds, 30.seconds)
 
 private val e2 = Square(ChessFile.E, ChessRank.TWO)
 private val e3 = Square(ChessFile.E, ChessRank.THREE)
@@ -116,11 +120,7 @@ class OnlineGameUpdateTest {
 
   @Test
   fun `game finished sets the result`() {
-    val event = OnlineGameMessage.Event(
-      OnlineGameEvent.GameFinished(REVISION + 1, OnlineGameResult.WHITE_WON, OnlineTerminationReason.CHECKMATE),
-    )
-
-    val state = update(event, connected()).state
+    val state = update(gameFinished(), connected()).state
 
     assertEquals(OnlineGameStatus.FINISHED, state.status)
     assertEquals(OnlineGameResult.WHITE_WON, state.result)
@@ -135,10 +135,78 @@ class OnlineGameUpdateTest {
   }
 
   @Test
-  fun `closed marks the connection closed`() {
-    val state = update(OnlineGameMessage.Event(OnlineGameEvent.Closed(4403.toShort(), "NOT_A_GAME_PARTICIPANT")), connected()).state
+  fun `a permanent close marks the connection closed without reconnecting`() {
+    val result = update(closed(permanent = true), connected())
 
-    assertEquals(ConnectionStatus.CLOSED, state.connection)
+    assertEquals(ConnectionStatus.CLOSED, result.state.connection)
+    assertTrue(result.commands.isEmpty())
+  }
+
+  @Test
+  fun `a dropped connection rolls back the pending move and reconnects`() {
+    val result = update(closed(permanent = false), movedOptimistically())
+
+    assertEquals(ConnectionStatus.CONNECTING, result.state.connection)
+    assertNull(result.state.pendingMove)
+    assertEquals(PieceType.PAWN, result.state.board?.position?.get(e2)?.type)
+    assertTrue(OnlineGameCommand.Connect(EXPECTED_RECONNECT_DELAYS.first()) in result.commands)
+  }
+
+  @Test
+  fun `repeated drops back off up to the maximum delay`() {
+    var state = connected()
+
+    val delays = EXPECTED_RECONNECT_DELAYS.map {
+      val result = update(closed(permanent = false), state)
+      state = result.state
+      result.commands.filterIsInstance<OnlineGameCommand.Connect>().single().delay
+    }
+
+    assertEquals(EXPECTED_RECONNECT_DELAYS, delays)
+  }
+
+  @Test
+  fun `a snapshot after reconnecting resets the backoff`() {
+    val reconnecting = update(closed(permanent = false), connected()).state
+    val resynced = update(snapshot(), reconnecting).state
+
+    val result = update(closed(permanent = false), resynced)
+
+    assertTrue(OnlineGameCommand.Connect(EXPECTED_RECONNECT_DELAYS.first()) in result.commands)
+  }
+
+  @Test
+  fun `a drop after the game finished does not reconnect`() {
+    val finished = update(gameFinished(), connected()).state
+
+    val result = update(closed(permanent = false), finished)
+
+    assertEquals(ConnectionStatus.CLOSED, result.state.connection)
+    assertTrue(result.commands.isEmpty())
+  }
+
+  @Test
+  fun `returning to the foreground reconnects immediately`() {
+    val result = update(OnlineGameMessage.AppForegrounded, connected())
+
+    assertEquals(ConnectionStatus.CONNECTING, result.state.connection)
+    assertTrue(OnlineGameCommand.Connect() in result.commands)
+  }
+
+  @Test
+  fun `a permanently closed game does not reconnect in the foreground`() {
+    val closed = update(closed(permanent = true), connected()).state
+
+    val result = update(OnlineGameMessage.AppForegrounded, closed)
+
+    assertTrue(result.commands.isEmpty())
+  }
+
+  @Test
+  fun `going to the background disconnects`() {
+    val result = update(OnlineGameMessage.AppBackgrounded, connected())
+
+    assertEquals(listOf(OnlineGameCommand.Disconnect), result.commands.toList())
   }
 
   @Test
@@ -202,6 +270,12 @@ class OnlineGameUpdateTest {
   }
 
   private fun click(square: Square) = OnlineGameMessage.Board(BoardMessage.SquareClick(square))
+
+  private fun closed(permanent: Boolean) = OnlineGameMessage.Event(OnlineGameEvent.Closed(permanent))
+
+  private fun gameFinished() = OnlineGameMessage.Event(
+    OnlineGameEvent.GameFinished(REVISION + 1, OnlineGameResult.WHITE_WON, OnlineTerminationReason.CHECKMATE),
+  )
 
   private fun rejected(reason: CommandRejection) =
     OnlineGameMessage.Event(OnlineGameEvent.CommandRejected(FIRST_COMMAND_ID, reason))
