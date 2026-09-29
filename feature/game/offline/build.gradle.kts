@@ -1,6 +1,7 @@
 plugins {
   alias(libs.plugins.android.library)
   alias(libs.plugins.compose.compiler)
+  alias(libs.plugins.parcelize)
   alias(libs.plugins.dagger.hilt)
   alias(libs.plugins.ksp)
 }
@@ -38,6 +39,7 @@ dependencies {
   implementation(project(":feature:game:board"))
   implementation(project(":feature:game:domain"))
   implementation(project(":mvu:core"))
+  implementation(project(":mvu:android-savedstate"))
 
   implementation(platform(libs.androidx.compose.bom))
   implementation(libs.androidx.compose.foundation)
@@ -46,6 +48,7 @@ dependencies {
   implementation(libs.androidx.compose.ui.tooling.preview)
   implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
   implementation(libs.androidx.lifecycle.runtime.compose)
+  implementation(libs.androidx.lifecycle.viewmodel.savedstate)
   implementation(libs.dagger.hilt.android)
   ksp(libs.dagger.hilt.compiler)
 
