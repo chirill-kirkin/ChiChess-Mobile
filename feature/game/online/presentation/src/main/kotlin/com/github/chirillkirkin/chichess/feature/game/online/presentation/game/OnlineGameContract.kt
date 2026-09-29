@@ -11,6 +11,7 @@ import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameEv
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameResult
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameStatus
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineTerminationReason
+import kotlin.time.Duration
 
 enum class ConnectionStatus { CONNECTING, CONNECTED, CLOSED }
 
@@ -39,6 +40,7 @@ data class OnlineGameState(
   val pendingMove: PendingMove? = null,
   val pendingPromotion: ChessMove? = null,
   val moveError: CommandRejection? = null,
+  val reconnectAttempt: Int = 0,
 )
 
 sealed interface OnlineGameMessage {
@@ -61,10 +63,16 @@ sealed interface OnlineGameMessage {
   data object ClaimDraw : OnlineGameMessage
 
   data object DismissError : OnlineGameMessage
+
+  data object AppForegrounded : OnlineGameMessage
+
+  data object AppBackgrounded : OnlineGameMessage
 }
 
 sealed interface OnlineGameCommand {
-  data object Connect : OnlineGameCommand
+  data class Connect(val delay: Duration = Duration.ZERO) : OnlineGameCommand
+
+  data object Disconnect : OnlineGameCommand
 
   data class RequestSync(val commandId: String) : OnlineGameCommand
 

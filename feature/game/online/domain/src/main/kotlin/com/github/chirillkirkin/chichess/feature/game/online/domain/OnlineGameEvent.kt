@@ -31,6 +31,9 @@ sealed interface OnlineGameEvent {
 
   data class CommandRejected(val commandId: String?, val reason: CommandRejection) : OnlineGameEvent
 
-  /** The socket closed; [code] is the application close code (e.g. 4403) when the server sent one. */
-  data class Closed(val code: Short?, val reason: String?) : OnlineGameEvent
+  /**
+   * The socket closed or failed. [permanent] is true when the server refused the game (not found or
+   * not a participant), so reconnecting cannot help.
+   */
+  data class Closed(val permanent: Boolean) : OnlineGameEvent
 }

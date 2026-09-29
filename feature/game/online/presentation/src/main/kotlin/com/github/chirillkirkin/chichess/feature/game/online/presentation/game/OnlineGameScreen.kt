@@ -140,6 +140,8 @@ private fun OnlineGameControls(
       resultText != null -> Text(text = resultText, style = ChiChessTheme.typography.gameResult)
       state.connection == ConnectionStatus.CLOSED ->
         Text(text = stringResource(R.string.online_disconnected))
+      state.connection == ConnectionStatus.CONNECTING ->
+        Text(text = stringResource(R.string.online_connecting))
       state.status == OnlineGameStatus.WAITING_FOR_OPPONENT -> {
         Text(text = stringResource(R.string.online_waiting_for_opponent))
         state.inviteCode?.let { code ->

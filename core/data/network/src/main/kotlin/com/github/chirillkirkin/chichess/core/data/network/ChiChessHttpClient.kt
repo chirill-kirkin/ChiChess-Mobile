@@ -15,6 +15,8 @@ import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.http.HttpHeaders
 import io.ktor.http.takeFrom
 import io.ktor.serialization.kotlinx.json.json
+import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.serialization.json.Json
 import timber.log.Timber
 
@@ -25,6 +27,8 @@ val chiChessJson: Json = Json {
 fun interface BearerTokenProvider {
   suspend fun currentToken(): String?
 }
+
+private val WebSocketPingInterval = 15.seconds
 
 private val timberKtorLogger = object : Logger {
   override fun log(message: String) {
@@ -77,6 +81,9 @@ fun createAuthenticatedChiChessHttpClient(
   tokenProvider: BearerTokenProvider,
 ): HttpClient =
   HttpClient(OkHttp) {
+    engine {
+      config { pingInterval(WebSocketPingInterval.inWholeMilliseconds, TimeUnit.MILLISECONDS) }
+    }
     configureChiChessClient(baseUrl, verboseLogging)
     installBearerAuth(tokenProvider)
     install(WebSockets)

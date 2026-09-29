@@ -16,11 +16,16 @@ import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readText
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import timber.log.Timber
 
 private const val GAME_SOCKET_SEGMENT = "game"
 private const val GAME_SOCKET_LOG_TAG = "GameSocket"
+
+private const val CLOSE_FORBIDDEN: Short = 4403
+private const val CLOSE_NOT_FOUND: Short = 4404
+private val PERMANENT_CLOSE_CODES = setOf(CLOSE_FORBIDDEN, CLOSE_NOT_FOUND)
 
 class KtorOnlineGameChannel(
   private val httpClient: HttpClient,
@@ -52,7 +57,10 @@ private class KtorOnlineGameSession(
     }
     val reason = session.closeReason.await()
     Timber.tag(GAME_SOCKET_LOG_TAG).v("socket closed: code=%s reason=%s", reason?.code, reason?.message)
-    emit(OnlineGameEvent.Closed(reason?.code, reason?.message))
+    emit(OnlineGameEvent.Closed(permanent = reason?.code in PERMANENT_CLOSE_CODES))
+  }.catch { error ->
+    Timber.tag(GAME_SOCKET_LOG_TAG).w(error, "socket failed")
+    emit(OnlineGameEvent.Closed(permanent = false))
   }
 
   override suspend fun requestSync(commandId: String) =
