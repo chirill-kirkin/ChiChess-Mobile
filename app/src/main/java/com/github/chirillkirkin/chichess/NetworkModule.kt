@@ -34,7 +34,7 @@ object NetworkModule {
   @Provides
   @Singleton
   @BootstrapHttpClient
-  fun provideBootstrapHttpClient(): HttpClient = createChiChessHttpClient(BuildConfig.SERVER_URL, BuildConfig.DEBUG)
+  fun provideBootstrapHttpClient(): HttpClient = createChiChessHttpClient(BuildConfig.DEV_SERVER_URL, BuildConfig.DEBUG)
 
   @Provides
   @Singleton
@@ -54,7 +54,7 @@ object NetworkModule {
   @AuthenticatedHttpClient
   fun provideAuthenticatedHttpClient(
     guestSessions: GuestSessionRepository,
-  ): HttpClient = createAuthenticatedChiChessHttpClient(BuildConfig.SERVER_URL, BuildConfig.DEBUG) {
+  ): HttpClient = createAuthenticatedChiChessHttpClient(BuildConfig.DEV_SERVER_URL, BuildConfig.DEBUG) {
     guestSessions.currentSession().token
   }
 
@@ -68,5 +68,5 @@ object NetworkModule {
   @Singleton
   fun provideOnlineGameChannel(
     @AuthenticatedHttpClient httpClient: HttpClient,
-  ): OnlineGameChannel = KtorOnlineGameChannel(httpClient, BuildConfig.SERVER_URL)
+  ): OnlineGameChannel = KtorOnlineGameChannel(httpClient, BuildConfig.DEV_SERVER_URL)
 }

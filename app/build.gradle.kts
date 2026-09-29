@@ -8,11 +8,11 @@ plugins {
   alias(libs.plugins.ksp)
 }
 
-private val serverUrl: String =
+private val devServerUrl: String =
   Properties().apply {
     rootProject.file("local.properties").inputStream().use { load(it) }
-  }.getProperty("chichess.serverUrl")
-    ?: error("Missing `chichess.serverUrl` in local.properties (e.g. http://10.0.2.2:8080)")
+  }.getProperty("chichess.devServerUrl")
+    ?: error("Missing `chichess.devServerUrl` in local.properties (e.g. http://10.0.2.2:8080)")
 
 android {
     namespace = "com.github.chirillkirkin.chichess"
@@ -24,7 +24,7 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        buildConfigField("String", "SERVER_URL", "\"$serverUrl\"")
+        buildConfigField("String", "DEV_SERVER_URL", "\"$devServerUrl\"")
     }
 
     buildTypes {
