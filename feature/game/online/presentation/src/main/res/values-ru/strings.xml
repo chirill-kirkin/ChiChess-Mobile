@@ -2,6 +2,7 @@
     <string name="online_connecting">Подключение…</string>
     <string name="online_disconnected">Соединение потеряно</string>
     <string name="online_waiting_for_opponent">Ожидание соперника…</string>
+    <string name="online_opponent_disconnected">Соперник отключился</string>
 
     <string name="online_resign">Сдаться</string>
     <string name="online_offer_draw">Предложить ничью</string>

@@ -51,6 +51,11 @@ class GameEventMapperTest {
   }
 
   @Test
+  fun `maps player left`() {
+    assertEquals(PieceColor.BLACK, assertIs<OnlineGameEvent.PlayerLeft>(PlayerLeftEvent(ApiPieceColor.BLACK).toOnlineEvent()).color)
+  }
+
+  @Test
   fun `maps command rejected to a typed reason`() {
     val event = CommandRejectedEvent(commandId = COMMAND_ID, code = "NOT_YOUR_TURN").toOnlineEvent()
 
@@ -66,11 +71,13 @@ class GameEventMapperTest {
       inviteCode = "INV0000000",
       yourColor = ApiPieceColor.BLACK,
       status = ApiGameStatus.IN_PROGRESS,
+      opponentConnected = false,
       revision = 7,
       fen = FEN,
     )
 
     val snapshot = assertIs<OnlineGameEvent.Snapshot>(SnapshotEvent(response).toOnlineEvent()).snapshot
     assertEquals(PieceColor.BLACK, snapshot.yourColor)
+    assertEquals(false, snapshot.opponentConnected)
   }
 }

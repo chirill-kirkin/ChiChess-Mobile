@@ -45,6 +45,7 @@ class SavedOnlineGameStateTest {
           inviteCode = INVITE_CODE,
           yourColor = PieceColor.WHITE,
           status = OnlineGameStatus.IN_PROGRESS,
+          opponentConnected = true,
           revision = REVISION,
           fen = Fen(START_FEN),
         ),

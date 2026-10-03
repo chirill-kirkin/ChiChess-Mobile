@@ -8,6 +8,7 @@ internal fun GameEvent.toOnlineEvent(): OnlineGameEvent =
   when (this) {
     is SnapshotEvent -> OnlineGameEvent.Snapshot(snapshot.toSnapshot())
     is PlayerJoinedEvent -> OnlineGameEvent.PlayerJoined(color.toPieceColor())
+    is PlayerLeftEvent -> OnlineGameEvent.PlayerLeft(color.toPieceColor())
     is MoveAppliedEvent ->
       OnlineGameEvent.MoveApplied(
         revision = revision,

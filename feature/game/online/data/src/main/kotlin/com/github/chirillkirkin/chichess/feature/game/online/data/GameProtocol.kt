@@ -83,6 +83,10 @@ internal data class SnapshotEvent(val snapshot: GameSnapshotResponse) : GameEven
 internal data class PlayerJoinedEvent(val color: ApiPieceColor) : GameEvent
 
 @Serializable
+@SerialName("PLAYER_LEFT")
+internal data class PlayerLeftEvent(val color: ApiPieceColor) : GameEvent
+
+@Serializable
 @SerialName("MOVE_APPLIED")
 internal data class MoveAppliedEvent(
   val revision: Long,

@@ -10,6 +10,8 @@ sealed interface OnlineGameEvent {
 
   data class PlayerJoined(val color: PieceColor) : OnlineGameEvent
 
+  data class PlayerLeft(val color: PieceColor) : OnlineGameEvent
+
   data class MoveApplied(
     val revision: Long,
     val fen: Fen,

@@ -2,6 +2,7 @@
     <string name="online_connecting">Connecting…</string>
     <string name="online_disconnected">Disconnected</string>
     <string name="online_waiting_for_opponent">Waiting for an opponent…</string>
+    <string name="online_opponent_disconnected">Opponent disconnected</string>
 
     <string name="online_resign">Resign</string>
     <string name="online_offer_draw">Offer draw</string>

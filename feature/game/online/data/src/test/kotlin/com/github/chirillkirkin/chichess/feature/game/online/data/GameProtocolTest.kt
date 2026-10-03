@@ -44,7 +44,7 @@ class GameProtocolTest {
   @Test
   fun `SNAPSHOT event maps last move and pending draw offer`() {
     val json =
-      """{"type":"SNAPSHOT","snapshot":{"gameId":"g","inviteCode":"INV0000000","yourColor":"WHITE","status":"IN_PROGRESS","revision":$EXPECTED_REVISION,"fen":"$FEN","lastMove":"$MOVE_UCI","pendingDrawOfferBy":"BLACK"}}"""
+      """{"type":"SNAPSHOT","snapshot":{"gameId":"g","inviteCode":"INV0000000","yourColor":"WHITE","status":"IN_PROGRESS","opponentConnected":false,"revision":$EXPECTED_REVISION,"fen":"$FEN","lastMove":"$MOVE_UCI","pendingDrawOfferBy":"BLACK"}}"""
 
     val event = assertIs<SnapshotEvent>(decode(json))
     val snapshot = event.snapshot.toSnapshot()
@@ -52,6 +52,7 @@ class GameProtocolTest {
     assertEquals(ChessMove(Square(ChessFile.E, ChessRank.TWO), Square(ChessFile.E, ChessRank.FOUR)), snapshot.lastMove)
     assertEquals(PieceColor.BLACK, snapshot.pendingDrawOfferBy)
     assertEquals(OnlineGameStatus.IN_PROGRESS, snapshot.status)
+    assertEquals(false, snapshot.opponentConnected)
   }
 
   @Test
@@ -80,6 +81,11 @@ class GameProtocolTest {
   fun `draw offer and decline events decode`() {
     assertEquals(ApiPieceColor.WHITE, assertIs<DrawOfferedEvent>(decode("""{"type":"DRAW_OFFERED","by":"WHITE"}""")).by)
     assertIs<DrawDeclinedEvent>(decode("""{"type":"DRAW_DECLINED"}"""))
+  }
+
+  @Test
+  fun `player left event decodes its color`() {
+    assertEquals(ApiPieceColor.BLACK, assertIs<PlayerLeftEvent>(decode("""{"type":"PLAYER_LEFT","color":"BLACK"}""")).color)
   }
 
   @Test

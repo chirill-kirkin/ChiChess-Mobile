@@ -34,6 +34,7 @@ data class OnlineGameState(
   val lastMove: ChessMove? = null,
   val revision: Long = 0L,
   val status: OnlineGameStatus = OnlineGameStatus.WAITING_FOR_OPPONENT,
+  val opponentConnected: Boolean = true,
   val result: OnlineGameResult? = null,
   val terminationReason: OnlineTerminationReason? = null,
   val pendingDrawOfferBy: PieceColor? = null,

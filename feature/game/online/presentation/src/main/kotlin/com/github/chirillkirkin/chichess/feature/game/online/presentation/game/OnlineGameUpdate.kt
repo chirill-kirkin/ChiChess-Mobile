@@ -66,7 +66,12 @@ private fun UpdateDsl<OnlineGameState, OnlineGameCommand>.onEvent(
     is OnlineGameEvent.DrawOffered -> state(state.copy(pendingDrawOfferBy = event.by))
     OnlineGameEvent.DrawDeclined -> state(state.copy(pendingDrawOfferBy = null))
     // PLAYER_JOINED carries no status, so pull a fresh snapshot to learn the game is now in progress.
-    is OnlineGameEvent.PlayerJoined -> command(OnlineGameCommand.RequestSync(newCommandId()))
+    is OnlineGameEvent.PlayerJoined -> {
+      if (event.color != state.yourColor) state(state.copy(opponentConnected = true))
+      command(OnlineGameCommand.RequestSync(newCommandId()))
+    }
+    is OnlineGameEvent.PlayerLeft ->
+      if (event.color != state.yourColor) state(state.copy(opponentConnected = false))
     is OnlineGameEvent.CommandRejected -> state(state.rolledBack(event.reason, engine))
     is OnlineGameEvent.Closed -> onClosed(event, state, engine)
   }
@@ -171,6 +176,7 @@ private fun OnlineGameState.withSnapshot(
     lastMove = snapshot.lastMove,
     revision = snapshot.revision,
     status = snapshot.status,
+    opponentConnected = snapshot.opponentConnected,
     result = snapshot.result,
     terminationReason = snapshot.terminationReason,
     pendingDrawOfferBy = snapshot.pendingDrawOfferBy,

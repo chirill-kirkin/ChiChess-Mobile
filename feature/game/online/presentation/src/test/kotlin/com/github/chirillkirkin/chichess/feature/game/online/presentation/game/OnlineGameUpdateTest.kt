@@ -17,6 +17,7 @@ import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameSt
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineTerminationReason
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
@@ -217,6 +218,45 @@ class OnlineGameUpdateTest {
   }
 
   @Test
+  fun `opponent leaving marks them disconnected without ending the game`() {
+    val result = update(OnlineGameMessage.Event(OnlineGameEvent.PlayerLeft(PieceColor.BLACK)), connected())
+
+    assertFalse(result.state.opponentConnected)
+    assertTrue(result.commands.isEmpty())
+
+    val afterSelect = update(click(e2), result.state).state
+    val move = update(click(e4), afterSelect)
+    assertTrue(OnlineGameCommand.SendMove(FIRST_COMMAND_ID, REVISION, ChessMove(e2, e4)) in move.commands)
+  }
+
+  @Test
+  fun `opponent rejoining clears the disconnected state`() {
+    val left = update(OnlineGameMessage.Event(OnlineGameEvent.PlayerLeft(PieceColor.BLACK)), connected()).state
+
+    val result = update(OnlineGameMessage.Event(OnlineGameEvent.PlayerJoined(PieceColor.BLACK)), left)
+
+    assertTrue(result.state.opponentConnected)
+  }
+
+  @Test
+  fun `your own join does not mark an absent opponent connected`() {
+    val opponentAbsent = update(snapshot(opponentConnected = false), OnlineGameState(GAME_ID)).state
+
+    val result = update(OnlineGameMessage.Event(OnlineGameEvent.PlayerJoined(PieceColor.WHITE)), opponentAbsent)
+
+    assertFalse(result.state.opponentConnected)
+  }
+
+  @Test
+  fun `snapshot after reconnect clears the disconnected state`() {
+    val left = update(OnlineGameMessage.Event(OnlineGameEvent.PlayerLeft(PieceColor.BLACK)), connected()).state
+
+    val state = update(snapshot(opponentConnected = true), left).state
+
+    assertTrue(state.opponentConnected)
+  }
+
+  @Test
   fun `clicks are ignored when it is not your turn`() {
     val connectedAsBlack = update(snapshot(PieceColor.BLACK), OnlineGameState(GAME_ID)).state
 
@@ -292,13 +332,17 @@ class OnlineGameUpdateTest {
       ),
     )
 
-  private fun snapshot(color: PieceColor = PieceColor.WHITE) = OnlineGameMessage.Event(
+  private fun snapshot(
+    color: PieceColor = PieceColor.WHITE,
+    opponentConnected: Boolean = true,
+  ) = OnlineGameMessage.Event(
     OnlineGameEvent.Snapshot(
       OnlineGameSnapshot(
         gameId = GAME_ID,
         inviteCode = INVITE_CODE,
         yourColor = color,
         status = OnlineGameStatus.IN_PROGRESS,
+        opponentConnected = opponentConnected,
         revision = REVISION,
         fen = Fen(START_FEN),
       ),

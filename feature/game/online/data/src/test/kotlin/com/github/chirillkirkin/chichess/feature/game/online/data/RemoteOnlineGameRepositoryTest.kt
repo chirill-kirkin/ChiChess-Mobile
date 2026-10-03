@@ -21,7 +21,6 @@ import io.ktor.http.headersOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 
 private const val TOKEN = "test-token"
@@ -55,7 +54,7 @@ class RemoteOnlineGameRepositoryTest {
     assertEquals(JoinGameResult.Joined(GAME_ID), result)
     val request = requests.single()
     assertEquals(GAME_JOIN_PATH, request.path)
-    assertTrue(request.body?.contains(INVITE_CODE) == true)
+    assertEquals(request.body?.contains(INVITE_CODE), true)
   }
 
   @Test
@@ -146,7 +145,7 @@ private fun snapshotBody(
   result: String? = null,
   terminationReason: String? = null,
 ): String =
-  """{"gameId":"$GAME_ID","inviteCode":"$INVITE_CODE","yourColor":"$color","status":"$status",""" +
+  """{"gameId":"$GAME_ID","inviteCode":"$INVITE_CODE","yourColor":"$color","status":"$status","opponentConnected":true,""" +
     """"revision":$REVISION,"fen":"$START_FEN","result":${result.asJson()},"terminationReason":${terminationReason.asJson()}}"""
 
 private fun String?.asJson(): String = this?.let { "\"$it\"" } ?: "null"

@@ -38,6 +38,7 @@ data class OnlineGameSnapshot(
   val inviteCode: String,
   val yourColor: PieceColor,
   val status: OnlineGameStatus,
+  val opponentConnected: Boolean,
   val revision: Long,
   val fen: Fen,
   val lastMove: ChessMove? = null,

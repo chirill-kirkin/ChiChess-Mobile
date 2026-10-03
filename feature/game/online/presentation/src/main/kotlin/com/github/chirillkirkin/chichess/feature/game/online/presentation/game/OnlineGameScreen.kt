@@ -166,6 +166,10 @@ private fun PlayingControls(
 ) {
   val opponentOfferedDraw = state.pendingDrawOfferBy != null && state.pendingDrawOfferBy != state.yourColor
 
+  if (!state.opponentConnected) {
+    Text(text = stringResource(R.string.online_opponent_disconnected))
+  }
+
   if (opponentOfferedDraw) {
     Text(text = stringResource(R.string.online_opponent_offered_draw))
     Row(horizontalArrangement = Arrangement.spacedBy(ChiChessTheme.spacing.medium)) {
