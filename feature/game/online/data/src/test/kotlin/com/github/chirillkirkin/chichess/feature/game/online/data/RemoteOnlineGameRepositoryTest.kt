@@ -1,5 +1,6 @@
 package com.github.chirillkirkin.chichess.feature.game.online.data
 
+import com.github.chirillkirkin.chichess.core.data.network.BearerTokenProvider
 import com.github.chirillkirkin.chichess.core.data.network.configureChiChessClient
 import com.github.chirillkirkin.chichess.core.data.network.installBearerAuth
 import com.github.chirillkirkin.chichess.feature.game.domain.Fen
@@ -131,7 +132,13 @@ class RemoteOnlineGameRepositoryTest {
     }
     val client = HttpClient(engine) {
       configureChiChessClient("http://localhost")
-      installBearerAuth { TOKEN }
+      installBearerAuth(
+        object : BearerTokenProvider {
+          override suspend fun currentToken(): String = TOKEN
+
+          override suspend fun refreshToken(): String = TOKEN
+        },
+      )
     }
     return RemoteOnlineGameRepository(client)
   }
