@@ -20,8 +20,10 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,7 +34,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.github.chirillkirkin.chichess.core.designsystem.theme.ChiChessTheme
 import com.github.chirillkirkin.chichess.feature.game.board.BoardMessage
 import com.github.chirillkirkin.chichess.feature.game.board.BoardState
@@ -51,12 +56,23 @@ private val ControlsSpace = 128.dp
 @Composable
 fun OnlineGameRoot(
   gameId: String,
+  onGameFailed: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
   val viewModel = hiltViewModel<OnlineGameViewModel, OnlineGameViewModel.Factory>(
     creationCallback = { factory -> factory.create(gameId) },
   )
   val state by viewModel.state.collectAsStateWithLifecycle()
+  val lifecycleOwner = LocalLifecycleOwner.current
+  val currentOnGameFailed by rememberUpdatedState(onGameFailed)
+
+  LaunchedEffect(viewModel, lifecycleOwner) {
+    lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+      viewModel.commands.collect { command ->
+        if (command is OnlineGameCommand.ExitOnError) currentOnGameFailed()
+      }
+    }
+  }
 
   OnlineGameScreen(state = state, onMessage = viewModel::send, modifier = modifier)
 }

@@ -52,7 +52,16 @@ private class KtorOnlineGameSession(
       if (frame is Frame.Text) {
         val text = frame.readText()
         Timber.tag(GAME_SOCKET_LOG_TAG).v("← %s", text)
-        emit(gameProtocolJson.decodeFromString(GameEvent.serializer(), text).toOnlineEvent())
+        when (val decoded = decodeGameEvent(text)) {
+          is DecodedGameEvent.Known -> emit(decoded.event.toOnlineEvent())
+          is DecodedGameEvent.Unknown ->
+            Timber.tag(GAME_SOCKET_LOG_TAG).w("ignoring unknown event type=%s: %s", decoded.type, text)
+          is DecodedGameEvent.Malformed -> {
+            Timber.tag(GAME_SOCKET_LOG_TAG).e(decoded.error, "malformed event type=%s: %s", decoded.type, text)
+            emit(OnlineGameEvent.ProtocolError)
+            return@flow
+          }
+        }
       }
     }
     val reason = session.closeReason.await()

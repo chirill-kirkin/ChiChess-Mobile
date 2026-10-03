@@ -51,6 +51,7 @@ class OnlineGameConnection(
       is OnlineGameCommand.SendAcceptDraw -> session?.acceptDraw(command.commandId)
       is OnlineGameCommand.SendDeclineDraw -> session?.declineDraw(command.commandId)
       is OnlineGameCommand.SendClaimDraw -> session?.claimDraw(command.commandId, command.expectedRevision)
+      OnlineGameCommand.ExitOnError -> Unit
     }
   }
 

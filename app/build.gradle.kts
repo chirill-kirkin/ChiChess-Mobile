@@ -61,6 +61,7 @@ dependencies {
   implementation(project(":core:domain"))
   implementation(project(":core:data"))
   implementation(project(":core:data:network"))
+  implementation(project(":mvu:core"))
 
   // Feature modules
   implementation(project(":feature:game:domain"))
@@ -78,6 +79,7 @@ dependencies {
   implementation(libs.androidx.activity.compose)
   implementation(libs.dagger.hilt.android)
   ksp(libs.dagger.hilt.compiler)
+  implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
   implementation(libs.timber)
 
   // Compose

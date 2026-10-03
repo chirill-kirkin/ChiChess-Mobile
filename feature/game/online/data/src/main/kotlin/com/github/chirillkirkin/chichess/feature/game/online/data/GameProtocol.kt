@@ -3,13 +3,21 @@ package com.github.chirillkirkin.chichess.feature.game.online.data
 import com.github.chirillkirkin.chichess.feature.game.online.domain.CommandRejection
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.descriptors.elementNames
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 
 internal const val GAME_PROTOCOL_VERSION = 1
 
+private const val EVENT_TYPE_KEY = "type"
+private const val SEALED_SUBCLASSES_ELEMENT_INDEX = 1
+
 internal val gameProtocolJson = Json {
   ignoreUnknownKeys = true
-  classDiscriminator = "type"
+  classDiscriminator = EVENT_TYPE_KEY
 }
 
 @Serializable
@@ -126,3 +134,30 @@ internal data class CommandRejectedEvent(
 
 internal fun commandRejectionOf(code: String): CommandRejection =
   CommandRejection.entries.firstOrNull { it.name == code } ?: CommandRejection.UNKNOWN
+
+internal sealed interface DecodedGameEvent {
+  data class Known(val event: GameEvent) : DecodedGameEvent
+
+  data class Unknown(val type: String) : DecodedGameEvent
+
+  data class Malformed(val type: String?, val error: SerializationException) : DecodedGameEvent
+}
+
+private val knownGameEventTypes: Set<String> =
+  GameEvent.serializer().descriptor.getElementDescriptor(SEALED_SUBCLASSES_ELEMENT_INDEX).elementNames.toSet()
+
+internal fun decodeGameEvent(text: String): DecodedGameEvent {
+  val element =
+    try {
+      gameProtocolJson.parseToJsonElement(text)
+    } catch (e: SerializationException) {
+      return DecodedGameEvent.Malformed(type = null, error = e)
+    }
+  val type = ((element as? JsonObject)?.get(EVENT_TYPE_KEY) as? JsonPrimitive)?.contentOrNull
+  if (type != null && type !in knownGameEventTypes) return DecodedGameEvent.Unknown(type)
+  return try {
+    DecodedGameEvent.Known(gameProtocolJson.decodeFromJsonElement(GameEvent.serializer(), element))
+  } catch (e: SerializationException) {
+    DecodedGameEvent.Malformed(type, e)
+  }
+}

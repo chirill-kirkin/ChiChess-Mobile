@@ -73,6 +73,10 @@ private fun UpdateDsl<OnlineGameState, OnlineGameCommand>.onEvent(
       if (event.color != state.yourColor) state(state.copy(opponentConnected = false))
     is OnlineGameEvent.CommandRejected -> state(state.rolledBack(event.reason, engine))
     is OnlineGameEvent.Closed -> onClosed(event, state, engine)
+    OnlineGameEvent.ProtocolError -> {
+      state(state.withoutPendingMove(engine).copy(connection = ConnectionStatus.CLOSED))
+      command(OnlineGameCommand.ExitOnError)
+    }
   }
 }
 

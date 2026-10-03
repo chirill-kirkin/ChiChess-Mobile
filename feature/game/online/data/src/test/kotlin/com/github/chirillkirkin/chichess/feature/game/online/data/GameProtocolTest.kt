@@ -11,6 +11,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlinx.serialization.MissingFieldException
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
@@ -86,6 +87,34 @@ class GameProtocolTest {
   @Test
   fun `player left event decodes its color`() {
     assertEquals(ApiPieceColor.BLACK, assertIs<PlayerLeftEvent>(decode("""{"type":"PLAYER_LEFT","color":"BLACK"}""")).color)
+  }
+
+  @Test
+  fun `an unknown event type is reported as unknown`() {
+    assertEquals(DecodedGameEvent.Unknown("SOMETHING_NEW"), decodeGameEvent("""{"type":"SOMETHING_NEW","color":"BLACK"}"""))
+  }
+
+  @Test
+  fun `an unknown field in a known event is ignored`() {
+    val decoded = assertIs<DecodedGameEvent.Known>(decodeGameEvent("""{"type":"PLAYER_LEFT","color":"BLACK","extra":1}"""))
+
+    assertEquals(PlayerLeftEvent(ApiPieceColor.BLACK), decoded.event)
+  }
+
+  @Test
+  fun `a known event missing a required field is malformed`() {
+    val json =
+      """{"type":"SNAPSHOT","snapshot":{"gameId":"g","inviteCode":"INV0000000","yourColor":"WHITE","status":"IN_PROGRESS","revision":$EXPECTED_REVISION,"fen":"$FEN"}}"""
+
+    val decoded = assertIs<DecodedGameEvent.Malformed>(decodeGameEvent(json))
+
+    assertEquals("SNAPSHOT", decoded.type)
+    assertIs<MissingFieldException>(decoded.error)
+  }
+
+  @Test
+  fun `text that is not json is malformed`() {
+    assertNull(assertIs<DecodedGameEvent.Malformed>(decodeGameEvent("not json")).type)
   }
 
   @Test

@@ -257,6 +257,27 @@ class OnlineGameUpdateTest {
   }
 
   @Test
+  fun `protocol error closes the connection and exits`() {
+    val pending = movedOptimistically()
+
+    val result = update(OnlineGameMessage.Event(OnlineGameEvent.ProtocolError), pending)
+
+    assertEquals(ConnectionStatus.CLOSED, result.state.connection)
+    assertNull(result.state.pendingMove)
+    assertEquals(PieceType.PAWN, result.state.board?.position?.get(e2)?.type)
+    assertEquals(listOf(OnlineGameCommand.ExitOnError), result.commands.toList())
+  }
+
+  @Test
+  fun `foregrounding after a protocol error does not reconnect`() {
+    val failed = update(OnlineGameMessage.Event(OnlineGameEvent.ProtocolError), connected()).state
+
+    val result = update(OnlineGameMessage.AppForegrounded, failed)
+
+    assertTrue(result.commands.isEmpty())
+  }
+
+  @Test
   fun `clicks are ignored when it is not your turn`() {
     val connectedAsBlack = update(snapshot(PieceColor.BLACK), OnlineGameState(GAME_ID)).state
 

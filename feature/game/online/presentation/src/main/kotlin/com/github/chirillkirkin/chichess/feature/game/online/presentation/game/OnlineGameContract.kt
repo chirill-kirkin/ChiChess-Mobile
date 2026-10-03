@@ -88,4 +88,6 @@ sealed interface OnlineGameCommand {
   data class SendDeclineDraw(val commandId: String) : OnlineGameCommand
 
   data class SendClaimDraw(val commandId: String, val expectedRevision: Long) : OnlineGameCommand
+
+  data object ExitOnError : OnlineGameCommand
 }
