@@ -6,7 +6,7 @@ import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameEv
 
 internal fun GameEvent.toOnlineEvent(): OnlineGameEvent =
   when (this) {
-    is SnapshotEvent -> OnlineGameEvent.Snapshot(snapshot.toSnapshot())
+    is SnapshotEvent -> OnlineGameEvent.Snapshot(snapshot.toSnapshot(), opponentConnected)
     is PlayerJoinedEvent -> OnlineGameEvent.PlayerJoined(color.toPieceColor())
     is PlayerLeftEvent -> OnlineGameEvent.PlayerLeft(color.toPieceColor())
     is MoveAppliedEvent ->

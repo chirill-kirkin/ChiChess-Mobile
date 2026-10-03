@@ -6,7 +6,10 @@ import com.github.chirillkirkin.chichess.feature.game.domain.PieceColor
 
 /** A live event received on the game channel, already mapped to domain types. */
 sealed interface OnlineGameEvent {
-  data class Snapshot(val snapshot: OnlineGameSnapshot) : OnlineGameEvent
+  data class Snapshot(
+    val snapshot: OnlineGameSnapshot,
+    val opponentConnected: Boolean,
+  ) : OnlineGameEvent
 
   data class PlayerJoined(val color: PieceColor) : OnlineGameEvent
 

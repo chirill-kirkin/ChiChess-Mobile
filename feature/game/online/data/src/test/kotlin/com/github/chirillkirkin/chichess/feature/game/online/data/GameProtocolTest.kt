@@ -44,7 +44,7 @@ class GameProtocolTest {
   @Test
   fun `SNAPSHOT event maps last move and pending draw offer`() {
     val json =
-      """{"type":"SNAPSHOT","snapshot":{"gameId":"g","inviteCode":"INV0000000","yourColor":"WHITE","status":"IN_PROGRESS","opponentConnected":false,"revision":$EXPECTED_REVISION,"fen":"$FEN","lastMove":"$MOVE_UCI","pendingDrawOfferBy":"BLACK"}}"""
+      """{"type":"SNAPSHOT","snapshot":{"gameId":"g","inviteCode":"INV0000000","yourColor":"WHITE","status":"IN_PROGRESS","revision":$EXPECTED_REVISION,"fen":"$FEN","lastMove":"$MOVE_UCI","pendingDrawOfferBy":"BLACK"},"opponentConnected":false}"""
 
     val event = assertIs<SnapshotEvent>(decode(json))
     val snapshot = event.snapshot.toSnapshot()
@@ -52,7 +52,7 @@ class GameProtocolTest {
     assertEquals(ChessMove(Square(ChessFile.E, ChessRank.TWO), Square(ChessFile.E, ChessRank.FOUR)), snapshot.lastMove)
     assertEquals(PieceColor.BLACK, snapshot.pendingDrawOfferBy)
     assertEquals(OnlineGameStatus.IN_PROGRESS, snapshot.status)
-    assertEquals(false, snapshot.opponentConnected)
+    assertEquals(false, event.opponentConnected)
   }
 
   @Test

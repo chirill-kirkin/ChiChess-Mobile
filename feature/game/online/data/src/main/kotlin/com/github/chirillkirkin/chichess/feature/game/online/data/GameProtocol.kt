@@ -76,7 +76,10 @@ internal sealed interface GameEvent
 
 @Serializable
 @SerialName("SNAPSHOT")
-internal data class SnapshotEvent(val snapshot: GameSnapshotResponse) : GameEvent
+internal data class SnapshotEvent(
+  val snapshot: GameSnapshotResponse,
+  val opponentConnected: Boolean,
+) : GameEvent
 
 @Serializable
 @SerialName("PLAYER_JOINED")

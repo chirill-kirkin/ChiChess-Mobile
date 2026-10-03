@@ -71,13 +71,12 @@ class GameEventMapperTest {
       inviteCode = "INV0000000",
       yourColor = ApiPieceColor.BLACK,
       status = ApiGameStatus.IN_PROGRESS,
-      opponentConnected = false,
       revision = 7,
       fen = FEN,
     )
 
-    val snapshot = assertIs<OnlineGameEvent.Snapshot>(SnapshotEvent(response).toOnlineEvent()).snapshot
-    assertEquals(PieceColor.BLACK, snapshot.yourColor)
-    assertEquals(false, snapshot.opponentConnected)
+    val event = assertIs<OnlineGameEvent.Snapshot>(SnapshotEvent(response, opponentConnected = false).toOnlineEvent())
+    assertEquals(PieceColor.BLACK, event.snapshot.yourColor)
+    assertEquals(false, event.opponentConnected)
   }
 }

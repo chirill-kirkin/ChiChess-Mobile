@@ -12,7 +12,6 @@ import com.github.chirillkirkin.chichess.feature.game.domain.PromotionPiece
 import com.github.chirillkirkin.chichess.feature.game.domain.Square
 import com.github.chirillkirkin.chichess.feature.game.online.domain.CommandRejection
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameEvent
-import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameSnapshot
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameStatus
 import com.github.chirillkirkin.mvu.Update
 import com.github.chirillkirkin.mvu.UpdateDsl
@@ -60,7 +59,7 @@ private fun UpdateDsl<OnlineGameState, OnlineGameCommand>.onEvent(
   newCommandId: () -> String,
 ) {
   when (event) {
-    is OnlineGameEvent.Snapshot -> state(state.withSnapshot(event.snapshot, engine))
+    is OnlineGameEvent.Snapshot -> state(state.withSnapshot(event, engine))
     is OnlineGameEvent.MoveApplied -> state(state.withMoveApplied(event, engine))
     is OnlineGameEvent.GameFinished -> state(state.finished(event))
     is OnlineGameEvent.DrawOffered -> state(state.copy(pendingDrawOfferBy = event.by))
@@ -163,9 +162,10 @@ private fun UpdateDsl<OnlineGameState, OnlineGameCommand>.applyOptimisticMove(
 }
 
 private fun OnlineGameState.withSnapshot(
-  snapshot: OnlineGameSnapshot,
+  event: OnlineGameEvent.Snapshot,
   engine: ChessGameEngine,
 ): OnlineGameState {
+  val snapshot = event.snapshot
   val position = engine.positionFromFen(snapshot.fen)
   return copy(
     connection = ConnectionStatus.CONNECTED,
@@ -176,7 +176,7 @@ private fun OnlineGameState.withSnapshot(
     lastMove = snapshot.lastMove,
     revision = snapshot.revision,
     status = snapshot.status,
-    opponentConnected = snapshot.opponentConnected,
+    opponentConnected = event.opponentConnected,
     result = snapshot.result,
     terminationReason = snapshot.terminationReason,
     pendingDrawOfferBy = snapshot.pendingDrawOfferBy,

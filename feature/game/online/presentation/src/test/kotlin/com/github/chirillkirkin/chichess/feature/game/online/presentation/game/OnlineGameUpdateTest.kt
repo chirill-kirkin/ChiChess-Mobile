@@ -342,10 +342,10 @@ class OnlineGameUpdateTest {
         inviteCode = INVITE_CODE,
         yourColor = color,
         status = OnlineGameStatus.IN_PROGRESS,
-        opponentConnected = opponentConnected,
         revision = REVISION,
         fen = Fen(START_FEN),
       ),
+      opponentConnected = opponentConnected,
     ),
   )
 }

@@ -152,7 +152,7 @@ private fun snapshotBody(
   result: String? = null,
   terminationReason: String? = null,
 ): String =
-  """{"gameId":"$GAME_ID","inviteCode":"$INVITE_CODE","yourColor":"$color","status":"$status","opponentConnected":true,""" +
+  """{"gameId":"$GAME_ID","inviteCode":"$INVITE_CODE","yourColor":"$color","status":"$status",""" +
     """"revision":$REVISION,"fen":"$START_FEN","result":${result.asJson()},"terminationReason":${terminationReason.asJson()}}"""
 
 private fun String?.asJson(): String = this?.let { "\"$it\"" } ?: "null"
