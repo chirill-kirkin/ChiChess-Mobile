@@ -14,6 +14,12 @@ android {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
   }
+
+  testOptions {
+    unitTests.all {
+      it.useJUnitPlatform()
+    }
+  }
 }
 
 kotlin {
@@ -30,4 +36,8 @@ dependencies {
   implementation(libs.ktor.client.content.negotiation)
   implementation(libs.ktor.serialization.kotlinx.json)
   implementation(libs.kotlinx.serialization.json)
+
+  testImplementation(libs.kotlin.test.junit5)
+  testImplementation(libs.kotlinx.coroutines.test)
+  testImplementation(libs.ktor.client.mock)
 }

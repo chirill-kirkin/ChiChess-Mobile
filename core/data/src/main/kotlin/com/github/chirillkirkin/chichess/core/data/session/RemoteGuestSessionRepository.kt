@@ -12,9 +12,11 @@ class RemoteGuestSessionRepository(
   private val httpClient: HttpClient,
   private val sessionStorage: GuestSessionStorage,
 ) : GuestSessionRepository {
-  // The bootstrap runs only when nothing is stored, so a session is created at most once per install.
+
   override suspend fun currentSession(): GuestSession =
     sessionStorage.read() ?: createSession()
+
+  override suspend fun refreshSession(): GuestSession = createSession()
 
   private suspend fun createSession(): GuestSession {
     val session = httpClient.post(GUEST_SESSION_PATH).body<GuestSessionResponse>().toGuestSession()

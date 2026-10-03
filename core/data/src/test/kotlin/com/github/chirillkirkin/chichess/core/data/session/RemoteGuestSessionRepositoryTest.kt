@@ -51,6 +51,19 @@ class RemoteGuestSessionRepositoryTest {
     assertEquals(emptyList(), requests)
   }
 
+  @Test
+  fun `refresh replaces the stored session with a newly created one`() = runTest {
+    val storage = FakeGuestSessionStorage(GuestSession(sessionId = "stale", token = "stale-token"))
+    val requests = mutableListOf<RecordedRequest>()
+    val repository = RemoteGuestSessionRepository(guestSessionClient(requests), storage)
+
+    val session = repository.refreshSession()
+
+    assertEquals(GuestSession(sessionId = "session-1", token = "token-1"), session)
+    assertEquals(session, storage.read())
+    assertEquals(listOf(RecordedRequest(HttpMethod.Post, GUEST_SESSION_PATH)), requests)
+  }
+
   private fun guestSessionClient(requests: MutableList<RecordedRequest>): HttpClient {
     val engine = MockEngine { request ->
       requests += RecordedRequest(request.method, request.url.encodedPath)

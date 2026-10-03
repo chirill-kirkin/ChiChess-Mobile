@@ -1,6 +1,7 @@
 package com.github.chirillkirkin.chichess
 
 import android.content.Context
+import com.github.chirillkirkin.chichess.core.data.network.BearerTokenProvider
 import com.github.chirillkirkin.chichess.core.data.network.createAuthenticatedChiChessHttpClient
 import com.github.chirillkirkin.chichess.core.data.network.createChiChessHttpClient
 import com.github.chirillkirkin.chichess.core.data.session.DataStoreGuestSessionStorage
@@ -54,9 +55,15 @@ object NetworkModule {
   @AuthenticatedHttpClient
   fun provideAuthenticatedHttpClient(
     guestSessions: GuestSessionRepository,
-  ): HttpClient = createAuthenticatedChiChessHttpClient(BuildConfig.DEV_SERVER_URL, BuildConfig.DEBUG) {
-    guestSessions.currentSession().token
-  }
+  ): HttpClient = createAuthenticatedChiChessHttpClient(
+    baseUrl = BuildConfig.DEV_SERVER_URL,
+    verboseLogging = BuildConfig.DEBUG,
+    tokenProvider = object : BearerTokenProvider {
+      override suspend fun currentToken(): String = guestSessions.currentSession().token
+
+      override suspend fun refreshToken(): String = guestSessions.refreshSession().token
+    },
+  )
 
   @Provides
   @Singleton
