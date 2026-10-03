@@ -24,8 +24,10 @@ val chiChessJson: Json = Json {
   ignoreUnknownKeys = true
 }
 
-fun interface BearerTokenProvider {
+interface BearerTokenProvider {
   suspend fun currentToken(): String?
+
+  suspend fun refreshToken(): String?
 }
 
 private val WebSocketPingInterval = 15.seconds
@@ -57,12 +59,12 @@ fun HttpClientConfig<*>.installBearerAuth(tokenProvider: BearerTokenProvider) {
   install(Auth) {
     bearer {
       loadTokens { tokenProvider.currentToken()?.let { BearerTokens(it, "") } }
+      refreshTokens { tokenProvider.refreshToken()?.let { BearerTokens(it, "") } }
       sendWithoutRequest { true }
     }
   }
 }
 
-/** Unauthenticated client for the guest-session bootstrap (`POST /sessions/guest`). */
 fun createChiChessHttpClient(
   baseUrl: String,
   verboseLogging: Boolean = false,
@@ -71,10 +73,6 @@ fun createChiChessHttpClient(
     configureChiChessClient(baseUrl, verboseLogging)
   }
 
-/**
- * Authenticated client for game HTTP endpoints and the live game WebSocket; attaches a bearer token
- * from [tokenProvider], including on the WebSocket handshake.
- */
 fun createAuthenticatedChiChessHttpClient(
   baseUrl: String,
   verboseLogging: Boolean = false,
