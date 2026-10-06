@@ -6,6 +6,11 @@
 - Android application ID and namespace root: `com.github.chirillkirkin.chichess`.
 - Declare dependency and plugin versions in `gradle/libs.versions.toml`; do not hardcode them in module build files.
 
+## Static analysis
+
+- Detekt, with the ktlint wrapper and Compose rules, is configured in `config/detekt/detekt.yml` and is not part of `check`.
+- Run `./gradlew detektMain detektTest` before every commit and fix all findings before committing. Do not run it at any other time unless the user explicitly asks.
+
 ## Module structure
 
 ```text
