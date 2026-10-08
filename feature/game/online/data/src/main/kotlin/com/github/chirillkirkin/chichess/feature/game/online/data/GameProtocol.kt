@@ -28,10 +28,7 @@ internal sealed interface GameCommand {
 
 @Serializable
 @SerialName("REQUEST_SYNC")
-internal data class RequestSync(
-  override val protocolVersion: Int,
-  override val commandId: String,
-) : GameCommand
+internal data class RequestSync(override val protocolVersion: Int, override val commandId: String) : GameCommand
 
 @Serializable
 @SerialName("MAKE_MOVE")
@@ -52,24 +49,15 @@ internal data class Resign(
 
 @Serializable
 @SerialName("OFFER_DRAW")
-internal data class OfferDraw(
-  override val protocolVersion: Int,
-  override val commandId: String,
-) : GameCommand
+internal data class OfferDraw(override val protocolVersion: Int, override val commandId: String) : GameCommand
 
 @Serializable
 @SerialName("ACCEPT_DRAW")
-internal data class AcceptDraw(
-  override val protocolVersion: Int,
-  override val commandId: String,
-) : GameCommand
+internal data class AcceptDraw(override val protocolVersion: Int, override val commandId: String) : GameCommand
 
 @Serializable
 @SerialName("DECLINE_DRAW")
-internal data class DeclineDraw(
-  override val protocolVersion: Int,
-  override val commandId: String,
-) : GameCommand
+internal data class DeclineDraw(override val protocolVersion: Int, override val commandId: String) : GameCommand
 
 @Serializable
 @SerialName("CLAIM_DRAW")
@@ -84,10 +72,7 @@ internal sealed interface GameEvent
 
 @Serializable
 @SerialName("SNAPSHOT")
-internal data class SnapshotEvent(
-  val snapshot: GameSnapshotResponse,
-  val opponentConnected: Boolean,
-) : GameEvent
+internal data class SnapshotEvent(val snapshot: GameSnapshotResponse, val opponentConnected: Boolean) : GameEvent
 
 @Serializable
 @SerialName("PLAYER_JOINED")
@@ -127,10 +112,7 @@ internal data object DrawDeclinedEvent : GameEvent
 
 @Serializable
 @SerialName("COMMAND_REJECTED")
-internal data class CommandRejectedEvent(
-  val commandId: String? = null,
-  val code: String,
-) : GameEvent
+internal data class CommandRejectedEvent(val commandId: String? = null, val code: String) : GameEvent
 
 internal fun commandRejectionOf(code: String): CommandRejection =
   CommandRejection.entries.firstOrNull { it.name == code } ?: CommandRejection.UNKNOWN
@@ -144,7 +126,12 @@ internal sealed interface DecodedGameEvent {
 }
 
 private val knownGameEventTypes: Set<String> =
-  GameEvent.serializer().descriptor.getElementDescriptor(SEALED_SUBCLASSES_ELEMENT_INDEX).elementNames.toSet()
+  GameEvent
+    .serializer()
+    .descriptor
+    .getElementDescriptor(SEALED_SUBCLASSES_ELEMENT_INDEX)
+    .elementNames
+    .toSet()
 
 internal fun decodeGameEvent(text: String): DecodedGameEvent {
   val element =

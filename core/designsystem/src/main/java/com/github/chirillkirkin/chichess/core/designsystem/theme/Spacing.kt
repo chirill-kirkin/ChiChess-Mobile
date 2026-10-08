@@ -5,11 +5,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @Immutable
-data class ChiChessSpacing(
-  val boardCoordinateInset: Dp,
-  val small: Dp,
-  val medium: Dp,
-)
+data class ChiChessSpacing(val boardCoordinateInset: Dp, val small: Dp, val medium: Dp)
 
 internal val DefaultChiChessSpacing =
   ChiChessSpacing(

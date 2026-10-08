@@ -18,7 +18,7 @@ public fun <Message, State, Command> update(
 }
 
 /** Receiver used by [update] to describe a state change and emitted commands. */
-public class UpdateDsl<State, Command> public constructor() {
+public class UpdateDsl<State, Command> {
   private var stateUpdate: State.() -> State = { this }
   private val commands: MutableList<Command> = mutableListOf()
 
@@ -47,11 +47,10 @@ public class UpdateDsl<State, Command> public constructor() {
     this.commands.addAll(commands)
   }
 
-  internal fun getResult(initialState: State): UpdateResult<State, Command> =
-    UpdateResult(
-      state = stateUpdate(initialState),
-      commands = commands.toList(),
-    )
+  internal fun getResult(initialState: State): UpdateResult<State, Command> = UpdateResult(
+    state = stateUpdate(initialState),
+    commands = commands.toList(),
+  )
 }
 
 /** Returns an update result containing this state and no commands. */
@@ -59,16 +58,13 @@ public fun <State, Command> State.only(): UpdateResult<State, Command> =
   UpdateResult(state = this, commands = emptyList())
 
 /** Returns an update result containing this state and the supplied commands. */
-public fun <State, Command> State.andCommands(
-  vararg commands: Command,
-): UpdateResult<State, Command> = UpdateResult(state = this, commands = commands.toList())
+public fun <State, Command> State.andCommands(vararg commands: Command): UpdateResult<State, Command> =
+  UpdateResult(state = this, commands = commands.toList())
 
 /** Returns an update result containing this state and one command. */
-public infix fun <State, Command> State.andCommand(
-  command: Command,
-): UpdateResult<State, Command> = UpdateResult(state = this, commands = listOf(command))
+public infix fun <State, Command> State.andCommand(command: Command): UpdateResult<State, Command> =
+  UpdateResult(state = this, commands = listOf(command))
 
 /** Returns an update result containing this state and the supplied commands. */
-public infix fun <State, Command> State.andCommands(
-  commands: List<Command>,
-): UpdateResult<State, Command> = UpdateResult(state = this, commands = commands)
+public infix fun <State, Command> State.andCommands(commands: List<Command>): UpdateResult<State, Command> =
+  UpdateResult(state = this, commands = commands)

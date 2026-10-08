@@ -11,22 +11,15 @@ interface ChessGameEngine {
 
   fun claimableDrawReason(position: ChessPosition): DrawReason?
 
-  fun applyMove(
-    position: ChessPosition,
-    move: ChessMove,
-  ): MoveApplicationResult
+  fun applyMove(position: ChessPosition, move: ChessMove): MoveApplicationResult
 }
 
 sealed interface GameStatus {
   data object Ongoing : GameStatus
 
-  data class Checkmate(
-    val winner: PieceColor,
-  ) : GameStatus
+  data class Checkmate(val winner: PieceColor) : GameStatus
 
-  data class Draw(
-    val reason: DrawReason,
-  ) : GameStatus
+  data class Draw(val reason: DrawReason) : GameStatus
 }
 
 enum class DrawReason {
@@ -44,11 +37,7 @@ enum class MoveRejectionReason {
 }
 
 sealed interface MoveApplicationResult {
-  data class Applied(
-    val position: ChessPosition,
-  ) : MoveApplicationResult
+  data class Applied(val position: ChessPosition) : MoveApplicationResult
 
-  data class Rejected(
-    val reason: MoveRejectionReason,
-  ) : MoveApplicationResult
+  data class Rejected(val reason: MoveRejectionReason) : MoveApplicationResult
 }

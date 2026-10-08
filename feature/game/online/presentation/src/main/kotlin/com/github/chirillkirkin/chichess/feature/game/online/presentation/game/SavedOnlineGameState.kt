@@ -25,21 +25,17 @@ data class SavedOnlineGameState(
   val pendingDrawOfferBy: PieceColor?,
 ) : Parcelable
 
-internal fun OnlineGameState.toSavedOnlineGame(): SavedOnlineGameState =
-  SavedOnlineGameState(
-    fen = confirmedPosition?.fen?.value,
-    yourColor = yourColor,
-    status = status,
-    revision = revision,
-    result = result,
-    terminationReason = terminationReason,
-    pendingDrawOfferBy = pendingDrawOfferBy,
-  )
+internal fun OnlineGameState.toSavedOnlineGame(): SavedOnlineGameState = SavedOnlineGameState(
+  fen = confirmedPosition?.fen?.value,
+  yourColor = yourColor,
+  status = status,
+  revision = revision,
+  result = result,
+  terminationReason = terminationReason,
+  pendingDrawOfferBy = pendingDrawOfferBy,
+)
 
-internal fun OnlineGameState.restoredFrom(
-  saved: SavedOnlineGameState,
-  engine: ChessGameEngine,
-): OnlineGameState {
+internal fun OnlineGameState.restoredFrom(saved: SavedOnlineGameState, engine: ChessGameEngine): OnlineGameState {
   val fen = saved.fen ?: return this
   val position = engine.positionFromFen(Fen(fen))
   return copy(

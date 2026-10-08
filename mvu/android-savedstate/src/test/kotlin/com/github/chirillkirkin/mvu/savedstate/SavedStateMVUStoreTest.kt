@@ -5,15 +5,15 @@ import androidx.lifecycle.SavedStateHandle
 import com.github.chirillkirkin.mvu.CommandExecutor
 import com.github.chirillkirkin.mvu.Update
 import com.github.chirillkirkin.mvu.only
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.parcelize.Parcelize
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class SavedStateMVUStoreTest {
@@ -86,10 +86,12 @@ internal class SavedStateMVUStoreTest {
     val savedStateHandle = SavedStateHandle(mapOf(STATE_KEY to RESTORED_COUNT))
     val update: Update<Message, ProjectedState, Command> = { message, state ->
       when (message) {
-        Message.Increment -> state.copy(
-          count = state.count + INCREMENT,
-          transientValue = UPDATED_TRANSIENT_VALUE,
-        ).only()
+        Message.Increment ->
+          state
+            .copy(
+              count = state.count + INCREMENT,
+              transientValue = UPDATED_TRANSIENT_VALUE,
+            ).only()
       }
     }
     val commandExecutor: CommandExecutor<Command, Message> = { emptyFlow() }
@@ -123,14 +125,9 @@ internal class SavedStateMVUStoreTest {
   }
 
   @Parcelize
-  private data class ParcelableState(
-    val count: Int,
-  ) : Parcelable
+  private data class ParcelableState(val count: Int) : Parcelable
 
-  private data class ProjectedState(
-    val count: Int,
-    val transientValue: String,
-  )
+  private data class ProjectedState(val count: Int, val transientValue: String)
 
   private sealed interface Message {
     data object Increment : Message

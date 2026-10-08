@@ -22,9 +22,9 @@ import com.github.chirillkirkin.mvu.savedstate.mvuStore
 import com.github.chirillkirkin.mvu.update
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.scopes.ViewModelScoped
-import javax.inject.Inject
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.parcelize.Parcelize
+import javax.inject.Inject
 
 data class OfflineGameState(
   val board: BoardState = BoardState(position = initialChessPosition()),
@@ -34,22 +34,16 @@ data class OfflineGameState(
 )
 
 sealed interface OfflineGameMessage {
-  data class Board(
-    val message: BoardMessage,
-  ) : OfflineGameMessage
+  data class Board(val message: BoardMessage) : OfflineGameMessage
 
-  data class PromotionSelected(
-    val piece: PromotionPiece,
-  ) : OfflineGameMessage
+  data class PromotionSelected(val piece: PromotionPiece) : OfflineGameMessage
 
   data object PromotionDismissed : OfflineGameMessage
 
   data object ClaimDraw : OfflineGameMessage
 }
 
-internal fun offlineGameUpdate(
-  gameEngine: ChessGameEngine,
-): Update<OfflineGameMessage, OfflineGameState, Nothing> =
+internal fun offlineGameUpdate(gameEngine: ChessGameEngine): Update<OfflineGameMessage, OfflineGameState, Nothing> =
   update { message, _ ->
     when (message) {
       is OfflineGameMessage.Board ->
@@ -85,18 +79,12 @@ internal fun offlineGameUpdate(
     }
   }
 
-private fun OfflineGameState.selectPromotion(
-  piece: PromotionPiece,
-  gameEngine: ChessGameEngine,
-): OfflineGameState {
+private fun OfflineGameState.selectPromotion(piece: PromotionPiece, gameEngine: ChessGameEngine): OfflineGameState {
   val move = pendingPromotion ?: return this
   return applyMove(move.copy(promotion = piece), gameEngine)
 }
 
-private fun OfflineGameState.updateBoard(
-  message: BoardMessage,
-  gameEngine: ChessGameEngine,
-): OfflineGameState =
+private fun OfflineGameState.updateBoard(message: BoardMessage, gameEngine: ChessGameEngine): OfflineGameState =
   when (message) {
     is BoardMessage.SquareClick -> {
       val selectedSquare = board.selectedSquare
@@ -112,10 +100,7 @@ private fun OfflineGameState.updateBoard(
     }
   }
 
-private fun OfflineGameState.applyMove(
-  move: ChessMove,
-  gameEngine: ChessGameEngine,
-): OfflineGameState =
+private fun OfflineGameState.applyMove(move: ChessMove, gameEngine: ChessGameEngine): OfflineGameState =
   when (val result = gameEngine.applyMove(board.position, move)) {
     is MoveApplicationResult.Applied -> {
       val status = gameEngine.gameStatus(result.position)
@@ -148,29 +133,26 @@ private fun OfflineGameState.selectSquare(
 ): OfflineGameState {
   val updatedBoard = boardUpdate(message, board)
   val legalTargets =
-    updatedBoard.selectedSquare?.let { selectedSquare ->
-      gameEngine
-        .legalMoves(updatedBoard.position)
-        .asSequence()
-        .filter { it.from == selectedSquare }
-        .map { it.to }
-        .toSet()
-    } ?: emptySet()
+    updatedBoard.selectedSquare
+      ?.let { selectedSquare ->
+        gameEngine
+          .legalMoves(updatedBoard.position)
+          .asSequence()
+          .filter { it.from == selectedSquare }
+          .map { it.to }
+          .toSet()
+      }.orEmpty()
 
   return copy(board = updatedBoard.copy(legalTargets = legalTargets))
 }
 
 @Parcelize
-internal data class SavedOfflineGameState(
-  val fen: String,
-  val drawReason: DrawReason?,
-) : Parcelable
+internal data class SavedOfflineGameState(val fen: String, val drawReason: DrawReason?) : Parcelable
 
-private fun OfflineGameState.toSavedOfflineGame(): SavedOfflineGameState =
-  SavedOfflineGameState(
-    fen = board.position.fen.value,
-    drawReason = (gameStatus as? GameStatus.Draw)?.reason,
-  )
+private fun OfflineGameState.toSavedOfflineGame(): SavedOfflineGameState = SavedOfflineGameState(
+  fen = board.position.fen.value,
+  drawReason = (gameStatus as? GameStatus.Draw)?.reason,
+)
 
 private fun OfflineGameState.restoredFrom(
   saved: SavedOfflineGameState,
@@ -189,10 +171,8 @@ private fun OfflineGameState.restoredFrom(
 private const val OFFLINE_GAME_STATE_KEY = "offline_game"
 
 @ViewModelScoped
-class OfflineGameStore @Inject constructor(
-  gameEngine: ChessGameEngine,
-  savedStateHandle: SavedStateHandle,
-) : SavedStateMVU<OfflineGameMessage, OfflineGameState, Nothing> by savedStateHandle.mvuStore(
+class OfflineGameStore @Inject constructor(gameEngine: ChessGameEngine, savedStateHandle: SavedStateHandle) :
+  SavedStateMVU<OfflineGameMessage, OfflineGameState, Nothing> by savedStateHandle.mvuStore(
     initialState = OfflineGameState(),
     update = offlineGameUpdate(gameEngine),
     commandExecutor = { emptyFlow() },
@@ -202,10 +182,10 @@ class OfflineGameStore @Inject constructor(
   )
 
 @HiltViewModel
-class OfflineGameViewModel @Inject constructor(
-  store: OfflineGameStore,
-) : ViewModel(), SavedStateMVU<OfflineGameMessage, OfflineGameState, Nothing> by store {
-  init {
-    launchIn(viewModelScope)
+class OfflineGameViewModel @Inject constructor(store: OfflineGameStore) :
+  ViewModel(),
+  SavedStateMVU<OfflineGameMessage, OfflineGameState, Nothing> by store {
+    init {
+      launchIn(viewModelScope)
+    }
   }
-}

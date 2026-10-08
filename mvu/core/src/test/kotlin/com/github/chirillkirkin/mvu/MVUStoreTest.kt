@@ -1,8 +1,5 @@
 package com.github.chirillkirkin.mvu
 
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertSame
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
@@ -14,10 +11,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertSame
 
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class MVUStoreTest {
-
   @Test
   fun `messages are processed sequentially`() = runTest {
     val store = createStore()
@@ -137,6 +136,7 @@ internal class MVUStoreTest {
           state.copy(recordedValues = state.recordedValues + message.value).only()
 
         is Message.StartWork -> state.andCommands(message.ids.map(Command::Work))
+
         is Message.Completed -> state.copy(workCompletedCount = state.workCompletedCount + 1).only()
       }
     },
@@ -157,14 +157,13 @@ internal class MVUStoreTest {
     }
   }
 
-  private data class State(
-    val recordedValues: List<Int> = emptyList(),
-    val workCompletedCount: Int = 0,
-  )
+  private data class State(val recordedValues: List<Int> = emptyList(), val workCompletedCount: Int = 0)
 
   private sealed interface Message {
     data class Record(val value: Int) : Message
+
     data class StartWork(val ids: List<Int>) : Message
+
     data class Completed(val id: Int) : Message
   }
 

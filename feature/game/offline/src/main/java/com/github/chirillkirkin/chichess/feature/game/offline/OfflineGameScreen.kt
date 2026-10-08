@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,10 +28,7 @@ import com.github.chirillkirkin.chichess.feature.game.domain.PieceColor
 private val GameResultSpace = 64.dp
 
 @Composable
-fun OfflineGameRoot(
-  modifier: Modifier = Modifier,
-  viewModel: OfflineGameViewModel = hiltViewModel(),
-) {
+fun OfflineGameRoot(modifier: Modifier = Modifier, viewModel: OfflineGameViewModel = hiltViewModel()) {
   val state by viewModel.state.collectAsStateWithLifecycle()
 
   OfflineGameScreen(
@@ -46,28 +44,7 @@ fun OfflineGameScreen(
   onMessage: (OfflineGameMessage) -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  val resultText =
-    when (val status = state.gameStatus) {
-      GameStatus.Ongoing -> null
-      is GameStatus.Checkmate ->
-        stringResource(
-          when (status.winner) {
-            PieceColor.WHITE -> R.string.white_wins_by_checkmate
-            PieceColor.BLACK -> R.string.black_wins_by_checkmate
-          },
-        )
-      is GameStatus.Draw ->
-        stringResource(
-          when (status.reason) {
-            DrawReason.STALEMATE -> R.string.draw_by_stalemate
-            DrawReason.THREEFOLD_REPETITION -> R.string.draw_by_threefold_repetition
-            DrawReason.FIFTY_MOVE_RULE -> R.string.draw_by_fifty_move_rule
-            DrawReason.FIVEFOLD_REPETITION -> R.string.draw_by_fivefold_repetition
-            DrawReason.SEVENTY_FIVE_MOVE_RULE -> R.string.draw_by_seventy_five_move_rule
-            DrawReason.INSUFFICIENT_MATERIAL -> R.string.draw_by_insufficient_material
-          },
-        )
-    }
+  val resultText = gameResultText(state.gameStatus)
 
   BoxWithConstraints(
     modifier = modifier.fillMaxSize(),
@@ -85,8 +62,8 @@ fun OfflineGameScreen(
         },
         modifier = Modifier.size(boardSize),
         promotionSquare = state.pendingPromotion?.to,
-        onPromotionSelected = { piece -> onMessage(OfflineGameMessage.PromotionSelected(piece)) },
-        onPromotionDismissed = { onMessage(OfflineGameMessage.PromotionDismissed) },
+        onPromotionSelect = { piece -> onMessage(OfflineGameMessage.PromotionSelected(piece)) },
+        onPromotionDismiss = { onMessage(OfflineGameMessage.PromotionDismissed) },
       )
 
       Box(
@@ -110,6 +87,32 @@ fun OfflineGameScreen(
       }
     }
   }
+}
+
+@Composable
+@ReadOnlyComposable
+private fun gameResultText(status: GameStatus): String? = when (status) {
+  GameStatus.Ongoing -> null
+
+  is GameStatus.Checkmate ->
+    stringResource(
+      when (status.winner) {
+        PieceColor.WHITE -> R.string.white_wins_by_checkmate
+        PieceColor.BLACK -> R.string.black_wins_by_checkmate
+      },
+    )
+
+  is GameStatus.Draw ->
+    stringResource(
+      when (status.reason) {
+        DrawReason.STALEMATE -> R.string.draw_by_stalemate
+        DrawReason.THREEFOLD_REPETITION -> R.string.draw_by_threefold_repetition
+        DrawReason.FIFTY_MOVE_RULE -> R.string.draw_by_fifty_move_rule
+        DrawReason.FIVEFOLD_REPETITION -> R.string.draw_by_fivefold_repetition
+        DrawReason.SEVENTY_FIVE_MOVE_RULE -> R.string.draw_by_seventy_five_move_rule
+        DrawReason.INSUFFICIENT_MATERIAL -> R.string.draw_by_insufficient_material
+      },
+    )
 }
 
 @Preview(name = "Phone", widthDp = 360, heightDp = 640, showBackground = true)

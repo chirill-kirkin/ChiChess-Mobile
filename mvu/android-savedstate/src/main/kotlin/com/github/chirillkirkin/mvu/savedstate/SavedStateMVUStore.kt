@@ -65,7 +65,7 @@ public fun <Message, State : Parcelable, Command> SavedStateHandle.mvuStore(
   subscriptions: List<Subscription<State, Message>> = emptyList(),
   concurrency: Int = DEFAULT_CONCURRENCY,
   onCommandException: (command: Command, throwable: Throwable) -> Unit = { _, _ -> },
-): SavedStateMVUStore<Message, State, Command> = createMVUStore(
+): SavedStateMVUStore<Message, State, Command> = mvuStore(
   initialState = initialState,
   update = update,
   commandExecutor = commandExecutor,
@@ -95,30 +95,6 @@ public fun <Message, State : Any, SavedState : Any, Command> SavedStateHandle.mv
   subscriptions: List<Subscription<State, Message>> = emptyList(),
   concurrency: Int = DEFAULT_CONCURRENCY,
   onCommandException: (command: Command, throwable: Throwable) -> Unit = { _, _ -> },
-): SavedStateMVUStore<Message, State, Command> = createMVUStore(
-  initialState = initialState,
-  update = update,
-  commandExecutor = commandExecutor,
-  saveState = saveState,
-  restoreState = restoreState,
-  stateKey = stateKey,
-  initialCommands = initialCommands,
-  subscriptions = subscriptions,
-  concurrency = concurrency,
-  onCommandException = onCommandException,
-)
-
-private fun <Message, State : Any, SavedState : Any, Command> SavedStateHandle.createMVUStore(
-  initialState: State,
-  update: Update<Message, State, Command>,
-  commandExecutor: CommandExecutor<Command, Message>,
-  saveState: (State) -> SavedState,
-  restoreState: (savedState: SavedState, initialState: State) -> State,
-  stateKey: String,
-  initialCommands: (isStateRestored: Boolean) -> List<Command>,
-  subscriptions: List<Subscription<State, Message>>,
-  concurrency: Int,
-  onCommandException: (command: Command, throwable: Throwable) -> Unit,
 ): SavedStateMVUStore<Message, State, Command> {
   val savedState = get<SavedState>(stateKey)
   val isStateRestored = savedState != null

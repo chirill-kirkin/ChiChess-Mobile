@@ -9,7 +9,7 @@ import dagger.hilt.android.components.ViewModelComponent
 
 @Module
 @InstallIn(ViewModelComponent::class)
-abstract class GameEngineModule {
+interface GameEngineModule {
   @Binds
-  abstract fun bindChessGameEngine(implementation: ChesslibGameEngine): ChessGameEngine
+  fun bindChessGameEngine(implementation: ChesslibGameEngine): ChessGameEngine
 }

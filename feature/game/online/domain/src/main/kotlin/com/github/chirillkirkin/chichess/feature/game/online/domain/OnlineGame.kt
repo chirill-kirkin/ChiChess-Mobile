@@ -28,10 +28,7 @@ enum class OnlineTerminationReason {
   FIVEFOLD_REPETITION,
 }
 
-data class CreatedGame(
-  val gameId: String,
-  val inviteCode: String,
-)
+data class CreatedGame(val gameId: String, val inviteCode: String)
 
 data class OnlineGameSnapshot(
   val gameId: String,

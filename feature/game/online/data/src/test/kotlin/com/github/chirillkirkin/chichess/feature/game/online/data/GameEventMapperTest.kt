@@ -21,11 +21,19 @@ private const val FEN = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3
 class GameEventMapperTest {
   @Test
   fun `maps move applied with parsed last move`() {
-    val event = MoveAppliedEvent(revision = 8, fen = FEN, status = ApiGameStatus.IN_PROGRESS, lastMove = "e2e4").toOnlineEvent()
+    val event = MoveAppliedEvent(
+      revision = 8,
+      fen = FEN,
+      status = ApiGameStatus.IN_PROGRESS,
+      lastMove = "e2e4",
+    ).toOnlineEvent()
 
     val moveApplied = assertIs<OnlineGameEvent.MoveApplied>(event)
     assertEquals(8L, moveApplied.revision)
-    assertEquals(ChessMove(Square(ChessFile.E, ChessRank.TWO), Square(ChessFile.E, ChessRank.FOUR)), moveApplied.lastMove)
+    assertEquals(
+      ChessMove(Square(ChessFile.E, ChessRank.TWO), Square(ChessFile.E, ChessRank.FOUR)),
+      moveApplied.lastMove,
+    )
     assertEquals(OnlineGameStatus.IN_PROGRESS, moveApplied.status)
     assertNull(moveApplied.result)
   }
@@ -46,13 +54,19 @@ class GameEventMapperTest {
 
   @Test
   fun `maps draw offered and declined`() {
-    assertEquals(PieceColor.WHITE, assertIs<OnlineGameEvent.DrawOffered>(DrawOfferedEvent(ApiPieceColor.WHITE).toOnlineEvent()).by)
+    assertEquals(
+      PieceColor.WHITE,
+      assertIs<OnlineGameEvent.DrawOffered>(DrawOfferedEvent(ApiPieceColor.WHITE).toOnlineEvent()).by,
+    )
     assertIs<OnlineGameEvent.DrawDeclined>(DrawDeclinedEvent.toOnlineEvent())
   }
 
   @Test
   fun `maps player left`() {
-    assertEquals(PieceColor.BLACK, assertIs<OnlineGameEvent.PlayerLeft>(PlayerLeftEvent(ApiPieceColor.BLACK).toOnlineEvent()).color)
+    assertEquals(
+      PieceColor.BLACK,
+      assertIs<OnlineGameEvent.PlayerLeft>(PlayerLeftEvent(ApiPieceColor.BLACK).toOnlineEvent()).color,
+    )
   }
 
   @Test

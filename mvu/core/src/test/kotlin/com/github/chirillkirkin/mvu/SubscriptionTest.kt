@@ -1,9 +1,5 @@
 package com.github.chirillkirkin.mvu
 
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -14,6 +10,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class SubscriptionTest {
@@ -75,14 +75,13 @@ internal class SubscriptionTest {
     assertEquals(ticksWhenStopped, store.state.value.ticks)
   }
 
-  private data class State(
-    val running: Boolean = false,
-    val ticks: Int = 0,
-  )
+  private data class State(val running: Boolean = false, val ticks: Int = 0)
 
   private sealed interface Message {
     data object Start : Message
+
     data object Stop : Message
+
     data object Tick : Message
   }
 

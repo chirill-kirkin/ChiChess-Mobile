@@ -72,7 +72,13 @@ class OnlineGameUpdateTest {
     assertEquals(ChessMove(e2, e4), state.pendingMove?.move)
     assertEquals(REVISION, state.pendingMove?.expectedRevision)
     assertNull(state.board?.position?.get(e2))
-    assertEquals(PieceType.PAWN, state.board?.position?.get(e4)?.type)
+    assertEquals(
+      PieceType.PAWN,
+      state.board
+        ?.position
+        ?.get(e4)
+        ?.type,
+    )
     assertTrue(OnlineGameCommand.SendMove(FIRST_COMMAND_ID, REVISION, ChessMove(e2, e4)) in result.commands)
   }
 
@@ -95,7 +101,13 @@ class OnlineGameUpdateTest {
 
     assertNull(state.pendingMove)
     assertEquals(CommandRejection.ILLEGAL_MOVE, state.moveError)
-    assertEquals(PieceType.PAWN, state.board?.position?.get(e2)?.type)
+    assertEquals(
+      PieceType.PAWN,
+      state.board
+        ?.position
+        ?.get(e2)
+        ?.type,
+    )
     assertNull(state.board?.position?.get(e4))
   }
 
@@ -107,7 +119,13 @@ class OnlineGameUpdateTest {
 
     assertNull(state.pendingMove)
     assertNull(state.moveError)
-    assertEquals(PieceType.PAWN, state.board?.position?.get(e2)?.type)
+    assertEquals(
+      PieceType.PAWN,
+      state.board
+        ?.position
+        ?.get(e2)
+        ?.type,
+    )
   }
 
   @Test
@@ -149,7 +167,13 @@ class OnlineGameUpdateTest {
 
     assertEquals(ConnectionStatus.CONNECTING, result.state.connection)
     assertNull(result.state.pendingMove)
-    assertEquals(PieceType.PAWN, result.state.board?.position?.get(e2)?.type)
+    assertEquals(
+      PieceType.PAWN,
+      result.state.board
+        ?.position
+        ?.get(e2)
+        ?.type,
+    )
     assertTrue(OnlineGameCommand.Connect(EXPECTED_RECONNECT_DELAYS.first()) in result.commands)
   }
 
@@ -160,7 +184,10 @@ class OnlineGameUpdateTest {
     val delays = EXPECTED_RECONNECT_DELAYS.map {
       val result = update(closed(permanent = false), state)
       state = result.state
-      result.commands.filterIsInstance<OnlineGameCommand.Connect>().single().delay
+      result.commands
+        .filterIsInstance<OnlineGameCommand.Connect>()
+        .single()
+        .delay
     }
 
     assertEquals(EXPECTED_RECONNECT_DELAYS, delays)
@@ -264,7 +291,13 @@ class OnlineGameUpdateTest {
 
     assertEquals(ConnectionStatus.CLOSED, result.state.connection)
     assertNull(result.state.pendingMove)
-    assertEquals(PieceType.PAWN, result.state.board?.position?.get(e2)?.type)
+    assertEquals(
+      PieceType.PAWN,
+      result.state.board
+        ?.position
+        ?.get(e2)
+        ?.type,
+    )
     assertEquals(listOf(OnlineGameCommand.ExitOnError), result.commands.toList())
   }
 
@@ -341,32 +374,29 @@ class OnlineGameUpdateTest {
   private fun rejected(reason: CommandRejection) =
     OnlineGameMessage.Event(OnlineGameEvent.CommandRejected(FIRST_COMMAND_ID, reason))
 
-  private fun moveApplied(fen: String, revision: Long) =
-    OnlineGameMessage.Event(
-      OnlineGameEvent.MoveApplied(
-        revision = revision,
-        fen = Fen(fen),
-        status = OnlineGameStatus.IN_PROGRESS,
-        lastMove = ChessMove(e2, e4),
-        result = null,
-        terminationReason = null,
-      ),
-    )
-
-  private fun snapshot(
-    color: PieceColor = PieceColor.WHITE,
-    opponentConnected: Boolean = true,
-  ) = OnlineGameMessage.Event(
-    OnlineGameEvent.Snapshot(
-      OnlineGameSnapshot(
-        gameId = GAME_ID,
-        inviteCode = INVITE_CODE,
-        yourColor = color,
-        status = OnlineGameStatus.IN_PROGRESS,
-        revision = REVISION,
-        fen = Fen(START_FEN),
-      ),
-      opponentConnected = opponentConnected,
+  private fun moveApplied(fen: String, revision: Long) = OnlineGameMessage.Event(
+    OnlineGameEvent.MoveApplied(
+      revision = revision,
+      fen = Fen(fen),
+      status = OnlineGameStatus.IN_PROGRESS,
+      lastMove = ChessMove(e2, e4),
+      result = null,
+      terminationReason = null,
     ),
   )
+
+  private fun snapshot(color: PieceColor = PieceColor.WHITE, opponentConnected: Boolean = true) =
+    OnlineGameMessage.Event(
+      OnlineGameEvent.Snapshot(
+        OnlineGameSnapshot(
+          gameId = GAME_ID,
+          inviteCode = INVITE_CODE,
+          yourColor = color,
+          status = OnlineGameStatus.IN_PROGRESS,
+          revision = REVISION,
+          fen = Fen(START_FEN),
+        ),
+        opponentConnected = opponentConnected,
+      ),
+    )
 }

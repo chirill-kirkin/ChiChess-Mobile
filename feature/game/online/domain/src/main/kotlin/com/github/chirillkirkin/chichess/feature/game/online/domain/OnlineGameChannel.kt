@@ -7,6 +7,8 @@ interface OnlineGameChannel {
   suspend fun connect(gameId: String): OnlineGameSession
 }
 
+class OnlineGameConnectionException(cause: Throwable) : Exception(cause)
+
 /**
  * A connected game socket. The caller owns each [commandId] so a command can be safely re-sent after
  * a reconnect; the server records it and stays idempotent.

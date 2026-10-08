@@ -67,28 +67,21 @@ class OfflineGameUpdateTest {
     val secondTarget = Square(ChessFile.D, ChessRank.THREE)
     val fakeEngine =
       object : ChessGameEngine {
-        override fun positionFromFen(fen: Fen): ChessPosition =
+        override fun positionFromFen(fen: Fen): ChessPosition = error("This test only selects pieces")
+
+        override fun legalMoves(position: ChessPosition): Set<ChessMove> = setOf(
+          ChessMove(firstPiece, firstTarget),
+          ChessMove(secondPiece, secondTarget),
+        )
+
+        override fun gameStatus(position: ChessPosition): GameStatus = error("This test only selects pieces")
+
+        override fun claimableDrawReason(position: ChessPosition): DrawReason? = error("This test only selects pieces")
+
+        override fun checkedKingSquare(position: ChessPosition): Square? = error("This test only selects pieces")
+
+        override fun applyMove(position: ChessPosition, move: ChessMove): MoveApplicationResult =
           error("This test only selects pieces")
-
-        override fun legalMoves(position: ChessPosition): Set<ChessMove> =
-          setOf(
-            ChessMove(firstPiece, firstTarget),
-            ChessMove(secondPiece, secondTarget),
-          )
-
-        override fun gameStatus(position: ChessPosition): GameStatus =
-          error("This test only selects pieces")
-
-        override fun claimableDrawReason(position: ChessPosition): DrawReason? =
-          error("This test only selects pieces")
-
-        override fun checkedKingSquare(position: ChessPosition): Square? =
-          error("This test only selects pieces")
-
-        override fun applyMove(
-          position: ChessPosition,
-          move: ChessMove,
-        ): MoveApplicationResult = error("This test only selects pieces")
       }
     val reducer = offlineGameUpdate(fakeEngine)
 
@@ -255,40 +248,36 @@ class OfflineGameUpdateTest {
     assertEquals(finishedState, finishedState.reduceBoardClick(Square(ChessFile.E, ChessRank.EIGHT)))
   }
 
-  private fun promotionState(): OfflineGameState =
-    OfflineGameState(
-      board =
-        BoardState(
-          position =
-            ChessPosition.fromSnapshot(
-              fen = Fen(PromotionPositionFenValue),
-              pieces =
-                mapOf(
-                  promotionFrom to ChessPiece(PieceColor.WHITE, PieceType.PAWN),
-                  Square(ChessFile.H, ChessRank.EIGHT) to ChessPiece(PieceColor.BLACK, PieceType.KING),
-                  Square(ChessFile.H, ChessRank.ONE) to ChessPiece(PieceColor.WHITE, PieceType.KING),
-                ),
-              sideToMove = PieceColor.WHITE,
-            ),
-        ),
-    )
+  private fun promotionState(): OfflineGameState = OfflineGameState(
+    board =
+      BoardState(
+        position =
+          ChessPosition.fromSnapshot(
+            fen = Fen(PromotionPositionFenValue),
+            pieces =
+              mapOf(
+                promotionFrom to ChessPiece(PieceColor.WHITE, PieceType.PAWN),
+                Square(ChessFile.H, ChessRank.EIGHT) to ChessPiece(PieceColor.BLACK, PieceType.KING),
+                Square(ChessFile.H, ChessRank.ONE) to ChessPiece(PieceColor.WHITE, PieceType.KING),
+              ),
+            sideToMove = PieceColor.WHITE,
+          ),
+      ),
+  )
 
   private fun OfflineGameState.reduceMessage(message: OfflineGameMessage): OfflineGameState =
     update(message, this).state
 
-  private fun OfflineGameState.reduceMove(
-    from: Square,
-    to: Square,
-  ): OfflineGameState = reduceBoardClick(from).reduceBoardClick(to)
+  private fun OfflineGameState.reduceMove(from: Square, to: Square): OfflineGameState =
+    reduceBoardClick(from).reduceBoardClick(to)
 
   private fun OfflineGameState.reduceBoardClick(
     square: Square,
     reducer: Update<OfflineGameMessage, OfflineGameState, Nothing> = update,
-  ): OfflineGameState =
-    reducer(
-      OfflineGameMessage.Board(BoardMessage.SquareClick(square)),
-      this,
-    ).state
+  ): OfflineGameState = reducer(
+    OfflineGameMessage.Board(BoardMessage.SquareClick(square)),
+    this,
+  ).state
 
   private companion object {
     const val PromotionPositionFenValue = "7k/P7/8/8/8/8/8/7K w - - 0 1"

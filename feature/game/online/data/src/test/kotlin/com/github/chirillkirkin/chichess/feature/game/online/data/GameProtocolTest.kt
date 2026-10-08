@@ -7,14 +7,14 @@ import com.github.chirillkirkin.chichess.feature.game.domain.PieceColor
 import com.github.chirillkirkin.chichess.feature.game.domain.Square
 import com.github.chirillkirkin.chichess.feature.game.online.domain.CommandRejection
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameStatus
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertIs
-import kotlin.test.assertNull
 import kotlinx.serialization.MissingFieldException
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertNull
 
 private const val COMMAND_ID = "cmd-1"
 private const val EXPECTED_REVISION = 7L
@@ -70,7 +70,10 @@ class GameProtocolTest {
 
   @Test
   fun `GAME_FINISHED event carries the result and reason`() {
-    val json = """{"type":"GAME_FINISHED","revision":9,"status":"FINISHED","result":"DRAW","terminationReason":"AGREEMENT"}"""
+    val json =
+      """
+      {"type":"GAME_FINISHED","revision":9,"status":"FINISHED","result":"DRAW","terminationReason":"AGREEMENT"}
+      """.trimIndent()
 
     val event = assertIs<GameFinishedEvent>(decode(json))
 
@@ -86,17 +89,25 @@ class GameProtocolTest {
 
   @Test
   fun `player left event decodes its color`() {
-    assertEquals(ApiPieceColor.BLACK, assertIs<PlayerLeftEvent>(decode("""{"type":"PLAYER_LEFT","color":"BLACK"}""")).color)
+    assertEquals(
+      ApiPieceColor.BLACK,
+      assertIs<PlayerLeftEvent>(decode("""{"type":"PLAYER_LEFT","color":"BLACK"}""")).color,
+    )
   }
 
   @Test
   fun `an unknown event type is reported as unknown`() {
-    assertEquals(DecodedGameEvent.Unknown("SOMETHING_NEW"), decodeGameEvent("""{"type":"SOMETHING_NEW","color":"BLACK"}"""))
+    assertEquals(
+      DecodedGameEvent.Unknown("SOMETHING_NEW"),
+      decodeGameEvent("""{"type":"SOMETHING_NEW","color":"BLACK"}"""),
+    )
   }
 
   @Test
   fun `an unknown field in a known event is ignored`() {
-    val decoded = assertIs<DecodedGameEvent.Known>(decodeGameEvent("""{"type":"PLAYER_LEFT","color":"BLACK","extra":1}"""))
+    val decoded = assertIs<DecodedGameEvent.Known>(
+      decodeGameEvent("""{"type":"PLAYER_LEFT","color":"BLACK","extra":1}"""),
+    )
 
     assertEquals(PlayerLeftEvent(ApiPieceColor.BLACK), decoded.event)
   }
@@ -119,7 +130,9 @@ class GameProtocolTest {
 
   @Test
   fun `COMMAND_REJECTED decodes and maps a known code`() {
-    val event = assertIs<CommandRejectedEvent>(decode("""{"type":"COMMAND_REJECTED","commandId":"$COMMAND_ID","code":"ILLEGAL_MOVE"}"""))
+    val event = assertIs<CommandRejectedEvent>(
+      decode("""{"type":"COMMAND_REJECTED","commandId":"$COMMAND_ID","code":"ILLEGAL_MOVE"}"""),
+    )
 
     assertEquals(COMMAND_ID, event.commandId)
     assertEquals(CommandRejection.ILLEGAL_MOVE, commandRejectionOf(event.code))
@@ -130,11 +143,13 @@ class GameProtocolTest {
     assertEquals(CommandRejection.UNKNOWN, commandRejectionOf("SOMETHING_NEW"))
   }
 
-  private fun typeOf(command: GameCommand): String? =
-    gameProtocolJson.encodeToString(GameCommand.serializer(), command).jsonObject()["type"]?.jsonPrimitive?.content
+  private fun typeOf(command: GameCommand): String? = gameProtocolJson
+    .encodeToString(GameCommand.serializer(), command)
+    .jsonObject()["type"]
+    ?.jsonPrimitive
+    ?.content
 
-  private fun decode(json: String): GameEvent =
-    gameProtocolJson.decodeFromString(GameEvent.serializer(), json)
+  private fun decode(json: String): GameEvent = gameProtocolJson.decodeFromString(GameEvent.serializer(), json)
 
   private fun String.jsonObject() = gameProtocolJson.parseToJsonElement(this).jsonObject
 }

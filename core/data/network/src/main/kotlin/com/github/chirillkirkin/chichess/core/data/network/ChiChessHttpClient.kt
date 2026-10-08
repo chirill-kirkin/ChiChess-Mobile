@@ -15,10 +15,10 @@ import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.http.HttpHeaders
 import io.ktor.http.takeFrom
 import io.ktor.serialization.kotlinx.json.json
-import java.util.concurrent.TimeUnit
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.serialization.json.Json
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.seconds
 
 val chiChessJson: Json = Json {
   ignoreUnknownKeys = true
@@ -38,10 +38,7 @@ private val timberKtorLogger = object : Logger {
   }
 }
 
-fun HttpClientConfig<*>.configureChiChessClient(
-  baseUrl: String,
-  verboseLogging: Boolean = false,
-) {
+fun HttpClientConfig<*>.configureChiChessClient(baseUrl: String, verboseLogging: Boolean = false) {
   install(ContentNegotiation) {
     json(chiChessJson)
   }
@@ -65,24 +62,19 @@ fun HttpClientConfig<*>.installBearerAuth(tokenProvider: BearerTokenProvider) {
   }
 }
 
-fun createChiChessHttpClient(
-  baseUrl: String,
-  verboseLogging: Boolean = false,
-): HttpClient =
-  HttpClient(OkHttp) {
-    configureChiChessClient(baseUrl, verboseLogging)
-  }
+fun createChiChessHttpClient(baseUrl: String, verboseLogging: Boolean = false): HttpClient = HttpClient(OkHttp) {
+  configureChiChessClient(baseUrl, verboseLogging)
+}
 
 fun createAuthenticatedChiChessHttpClient(
   baseUrl: String,
   verboseLogging: Boolean = false,
   tokenProvider: BearerTokenProvider,
-): HttpClient =
-  HttpClient(OkHttp) {
-    engine {
-      config { pingInterval(WebSocketPingInterval.inWholeMilliseconds, TimeUnit.MILLISECONDS) }
-    }
-    configureChiChessClient(baseUrl, verboseLogging)
-    installBearerAuth(tokenProvider)
-    install(WebSockets)
+): HttpClient = HttpClient(OkHttp) {
+  engine {
+    config { pingInterval(WebSocketPingInterval.inWholeMilliseconds, TimeUnit.MILLISECONDS) }
   }
+  configureChiChessClient(baseUrl, verboseLogging)
+  installBearerAuth(tokenProvider)
+  install(WebSockets)
+}

@@ -9,9 +9,9 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlinx.coroutines.test.runTest
 
 class RemoteGuestSessionRepositoryTest {
   @Test
@@ -79,14 +79,9 @@ class RemoteGuestSessionRepositoryTest {
   }
 }
 
-private data class RecordedRequest(
-  val method: HttpMethod,
-  val path: String,
-)
+private data class RecordedRequest(val method: HttpMethod, val path: String)
 
-private class FakeGuestSessionStorage(
-  private var stored: GuestSession? = null,
-) : GuestSessionStorage {
+private class FakeGuestSessionStorage(private var stored: GuestSession? = null) : GuestSessionStorage {
   override suspend fun read(): GuestSession? = stored
 
   override suspend fun save(session: GuestSession) {

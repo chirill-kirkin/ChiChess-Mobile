@@ -3,15 +3,13 @@ package com.github.chirillkirkin.chichess.feature.game.online.presentation.game
 import androidx.lifecycle.SavedStateHandle
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessGameEngine
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameChannel
+import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameConnectionException
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameEvent
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameSession
 import com.github.chirillkirkin.mvu.CommandExecutor
 import com.github.chirillkirkin.mvu.Subscription
 import com.github.chirillkirkin.mvu.savedstate.SavedStateMVU
 import com.github.chirillkirkin.mvu.savedstate.mvuStore
-import java.util.UUID
-import kotlin.coroutines.cancellation.CancellationException
-import kotlin.time.Duration
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
@@ -24,12 +22,11 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import java.util.UUID
+import kotlin.time.Duration
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class OnlineGameConnection(
-  private val channel: OnlineGameChannel,
-  private val gameId: String,
-) {
+class OnlineGameConnection(private val channel: OnlineGameChannel, private val gameId: String) {
   // A distinct instance per request, so reconnecting with the same delay still restarts the socket.
   private class ConnectRequest(val startDelay: Duration)
 
@@ -55,26 +52,23 @@ class OnlineGameConnection(
     }
   }
 
-  private fun socketEvents(startDelay: Duration): Flow<OnlineGameEvent> =
-    flow {
-      delay(startDelay)
-      val opened =
-        try {
-          channel.connect(gameId)
-        } catch (e: CancellationException) {
-          throw e
-        } catch (e: Exception) {
-          emit(OnlineGameEvent.Closed(permanent = false))
-          return@flow
-        }
-      session = opened
+  private fun socketEvents(startDelay: Duration): Flow<OnlineGameEvent> = flow {
+    delay(startDelay)
+    val opened =
       try {
-        emitAll(opened.events)
-      } finally {
-        session = null
-        withContext(NonCancellable) { opened.close() }
+        channel.connect(gameId)
+      } catch (_: OnlineGameConnectionException) {
+        emit(OnlineGameEvent.Closed(permanent = false))
+        return@flow
       }
+    session = opened
+    try {
+      emitAll(opened.events)
+    } finally {
+      session = null
+      withContext(NonCancellable) { opened.close() }
     }
+  }
 }
 
 internal fun onlineGameCommandExecutor(
@@ -90,23 +84,21 @@ fun SavedStateHandle.onlineGameStore(
   gameEngine: ChessGameEngine,
   appInForeground: Flow<Boolean>,
   newCommandId: () -> String = { UUID.randomUUID().toString() },
-): SavedStateMVU<OnlineGameMessage, OnlineGameState, OnlineGameCommand> =
-  mvuStore(
-    initialState = OnlineGameState(gameId = gameId),
-    update = onlineGameUpdate(gameEngine, newCommandId),
-    commandExecutor = onlineGameCommandExecutor(connection),
-    saveState = OnlineGameState::toSavedOnlineGame,
-    restoreState = { saved, initial -> initial.restoredFrom(saved, gameEngine) },
-    stateKey = ONLINE_GAME_STATE_KEY,
-    subscriptions = listOf(socketEvents(connection), appVisibility(appInForeground)),
-  )
+): SavedStateMVU<OnlineGameMessage, OnlineGameState, OnlineGameCommand> = mvuStore(
+  initialState = OnlineGameState(gameId = gameId),
+  update = onlineGameUpdate(gameEngine, newCommandId),
+  commandExecutor = onlineGameCommandExecutor(connection),
+  saveState = OnlineGameState::toSavedOnlineGame,
+  restoreState = { saved, initial -> initial.restoredFrom(saved, gameEngine) },
+  stateKey = ONLINE_GAME_STATE_KEY,
+  subscriptions = listOf(socketEvents(connection), appVisibility(appInForeground)),
+)
 
 private fun socketEvents(connection: OnlineGameConnection): Subscription<OnlineGameState, OnlineGameMessage> =
-  { connection.events.map { OnlineGameMessage.Event(it) } }
+  { connection.events.map(OnlineGameMessage::Event) }
 
-private fun appVisibility(appInForeground: Flow<Boolean>): Subscription<OnlineGameState, OnlineGameMessage> =
-  {
-    appInForeground.distinctUntilChanged().map { inForeground ->
-      if (inForeground) OnlineGameMessage.AppForegrounded else OnlineGameMessage.AppBackgrounded
-    }
+private fun appVisibility(appInForeground: Flow<Boolean>): Subscription<OnlineGameState, OnlineGameMessage> = {
+  appInForeground.distinctUntilChanged().map { inForeground ->
+    if (inForeground) OnlineGameMessage.AppForegrounded else OnlineGameMessage.AppBackgrounded
   }
+}

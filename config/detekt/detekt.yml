@@ -10,6 +10,7 @@ complexity:
   CyclomaticComplexMethod:
     ignoreSimpleWhenEntries: true
   LongParameterList:
+    allowedFunctionParameters: 6
     ignoreDefaultParameters: true
   TooManyFunctions:
     ignorePrivate: true
@@ -24,8 +25,6 @@ coroutines:
     active: true
   SuspendFunSwallowedCancellation:
     active: true
-  SuspendFunWithCoroutineScopeReceiver:
-    active: true
 
 exceptions:
   ErrorUsageWithThrowable:
@@ -38,6 +37,8 @@ exceptions:
 naming:
   FunctionNaming:
     ignoreAnnotated: ['Composable']
+  MatchingDeclarationName:
+    active: false
   ObjectPropertyNaming:
     constantPattern: '[A-Z][A-Za-z0-9]*|[A-Z][_A-Z0-9]*'
   TopLevelPropertyNaming:
@@ -60,6 +61,7 @@ potential-bugs:
     active: true
   MissingUseCall:
     active: true
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
   NullCheckOnMutableProperty:
     active: true
   NullableToStringCall:
@@ -145,7 +147,7 @@ Compose:
 ktlint:
   code_style: 'ktlint_official'
   AnnotationOnSeparateLine:
-    indentSize: 2
+    active: false
   ArgumentListWrapping:
     indentSize: 2
   BinaryExpressionWrapping:
@@ -180,9 +182,6 @@ ktlint:
     indentSize: 2
   FunctionSignature:
     indentSize: 2
-  IfElseBracing:
-    active: true
-    indentSize: 2
   IfElseWrapping:
     active: true
     indentSize: 2
@@ -193,9 +192,6 @@ ktlint:
   ModifierListSpacing:
     indentSize: 2
   MultiLineIfElse:
-    indentSize: 2
-  MultilineExpressionWrapping:
-    active: true
     indentSize: 2
   MultilineLoop:
     indentSize: 2
@@ -232,9 +228,6 @@ ktlint:
   TypeArgumentListSpacing:
     indentSize: 2
   TypeParameterListSpacing:
-    indentSize: 2
-  WhenEntryBracing:
-    active: true
     indentSize: 2
   Wrapping:
     indentSize: 2

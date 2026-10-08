@@ -16,7 +16,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.github.chirillkirkin.chichess.core.designsystem.theme.ChiChessTheme
 
@@ -30,7 +29,6 @@ fun HomeRoot(
   modifier: Modifier = Modifier,
   viewModel: HomeViewModel = hiltViewModel(),
 ) {
-  val state by viewModel.state.collectAsStateWithLifecycle()
   val lifecycleOwner = LocalLifecycleOwner.current
   val currentOpenOfflineGame by rememberUpdatedState(onOpenOfflineGame)
   val currentOpenOnlineLobby by rememberUpdatedState(onOpenOnlineLobby)
@@ -48,19 +46,13 @@ fun HomeRoot(
 
   MainScreen(
     appName = appName,
-    state = state,
     onMessage = viewModel::send,
     modifier = modifier,
   )
 }
 
 @Composable
-fun MainScreen(
-  appName: String,
-  state: HomeState,
-  onMessage: (HomeMessage) -> Unit,
-  modifier: Modifier = Modifier,
-) {
+fun MainScreen(appName: String, onMessage: (HomeMessage) -> Unit, modifier: Modifier = Modifier) {
   Column(
     modifier = modifier.fillMaxSize(),
     verticalArrangement =
@@ -89,7 +81,6 @@ private fun MainScreenPreview() {
   ChiChessTheme {
     MainScreen(
       appName = PreviewAppName,
-      state = HomeState,
       onMessage = {},
     )
   }

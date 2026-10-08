@@ -26,17 +26,17 @@ internal class UpdateTest {
     assertEquals(emptyList(), replacement.commands)
   }
 
-  private data class State(
-    val value: Int,
-  )
+  private data class State(val value: Int)
 
   private sealed interface Message {
     data object Increment : Message
+
     data object Replace : Message
   }
 
   private sealed interface Command {
     data object First : Command
+
     data object Second : Command
   }
 }

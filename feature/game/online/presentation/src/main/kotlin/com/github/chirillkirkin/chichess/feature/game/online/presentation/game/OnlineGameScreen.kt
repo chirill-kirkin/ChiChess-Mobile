@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,10 +22,11 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,20 +58,20 @@ private val ControlsSpace = 128.dp
 @Composable
 fun OnlineGameRoot(
   gameId: String,
-  onGameFailed: () -> Unit,
+  onGameFail: () -> Unit,
   modifier: Modifier = Modifier,
-) {
-  val viewModel = hiltViewModel<OnlineGameViewModel, OnlineGameViewModel.Factory>(
+  viewModel: OnlineGameViewModel = hiltViewModel<OnlineGameViewModel, OnlineGameViewModel.Factory>(
     creationCallback = { factory -> factory.create(gameId) },
-  )
+  ),
+) {
   val state by viewModel.state.collectAsStateWithLifecycle()
   val lifecycleOwner = LocalLifecycleOwner.current
-  val currentOnGameFailed by rememberUpdatedState(onGameFailed)
+  val currentOnGameFail by rememberUpdatedState(onGameFail)
 
   LaunchedEffect(viewModel, lifecycleOwner) {
     lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
       viewModel.commands.collect { command ->
-        if (command is OnlineGameCommand.ExitOnError) currentOnGameFailed()
+        if (command is OnlineGameCommand.ExitOnError) currentOnGameFail()
       }
     }
   }
@@ -78,11 +80,7 @@ fun OnlineGameRoot(
 }
 
 @Composable
-fun OnlineGameScreen(
-  state: OnlineGameState,
-  onMessage: (OnlineGameMessage) -> Unit,
-  modifier: Modifier = Modifier,
-) {
+fun OnlineGameScreen(state: OnlineGameState, onMessage: (OnlineGameMessage) -> Unit, modifier: Modifier = Modifier) {
   val board = state.board
   if (board == null) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -122,8 +120,8 @@ fun OnlineGameScreen(
           onSquareClick = { onMessage(OnlineGameMessage.Board(BoardMessage.SquareClick(it))) },
           perspective = state.yourColor ?: PieceColor.WHITE,
           promotionSquare = state.pendingPromotion?.to,
-          onPromotionSelected = { onMessage(OnlineGameMessage.PromotionSelected(it)) },
-          onPromotionDismissed = { onMessage(OnlineGameMessage.PromotionDismissed) },
+          onPromotionSelect = { onMessage(OnlineGameMessage.PromotionSelected(it)) },
+          onPromotionDismiss = { onMessage(OnlineGameMessage.PromotionDismissed) },
           modifier = Modifier.size(boardSize),
         )
 
@@ -154,10 +152,13 @@ private fun OnlineGameControls(
   ) {
     when {
       resultText != null -> Text(text = resultText, style = ChiChessTheme.typography.gameResult)
+
       state.connection == ConnectionStatus.CLOSED ->
         Text(text = stringResource(R.string.online_disconnected))
+
       state.connection == ConnectionStatus.CONNECTING ->
         Text(text = stringResource(R.string.online_connecting))
+
       state.status == OnlineGameStatus.WAITING_FOR_OPPONENT -> {
         Text(text = stringResource(R.string.online_waiting_for_opponent))
         state.inviteCode?.let { code ->
@@ -170,16 +171,14 @@ private fun OnlineGameControls(
           )
         }
       }
+
       else -> PlayingControls(state = state, onMessage = onMessage)
     }
   }
 }
 
 @Composable
-private fun PlayingControls(
-  state: OnlineGameState,
-  onMessage: (OnlineGameMessage) -> Unit,
-) {
+private fun ColumnScope.PlayingControls(state: OnlineGameState, onMessage: (OnlineGameMessage) -> Unit) {
   val opponentOfferedDraw = state.pendingDrawOfferBy != null && state.pendingDrawOfferBy != state.yourColor
 
   if (!state.opponentConnected) {
@@ -220,49 +219,90 @@ private fun PlayingControls(
 }
 
 @Composable
-private fun connectionText(connection: ConnectionStatus): String =
-  stringResource(
-    if (connection == ConnectionStatus.CLOSED) R.string.online_disconnected else R.string.online_connecting,
-  )
+@ReadOnlyComposable
+private fun connectionText(connection: ConnectionStatus): String = stringResource(
+  if (connection == ConnectionStatus.CLOSED) R.string.online_disconnected else R.string.online_connecting,
+)
 
 @StringRes
-private fun resultRes(result: OnlineGameResult, reason: OnlineTerminationReason?): Int? =
-  when (result) {
-    OnlineGameResult.WHITE_WON ->
-      when (reason) {
-        OnlineTerminationReason.CHECKMATE -> R.string.online_white_wins_by_checkmate
-        OnlineTerminationReason.RESIGNATION -> R.string.online_white_wins_by_resignation
-        else -> null
-      }
-    OnlineGameResult.BLACK_WON ->
-      when (reason) {
-        OnlineTerminationReason.CHECKMATE -> R.string.online_black_wins_by_checkmate
-        OnlineTerminationReason.RESIGNATION -> R.string.online_black_wins_by_resignation
-        else -> null
-      }
-    OnlineGameResult.DRAW ->
-      when (reason) {
-        OnlineTerminationReason.STALEMATE -> R.string.online_draw_by_stalemate
-        OnlineTerminationReason.AGREEMENT -> R.string.online_draw_by_agreement
-        OnlineTerminationReason.INSUFFICIENT_MATERIAL -> R.string.online_draw_by_insufficient_material
-        OnlineTerminationReason.THREEFOLD_REPETITION -> R.string.online_draw_by_threefold_repetition
-        OnlineTerminationReason.FIVEFOLD_REPETITION -> R.string.online_draw_by_fivefold_repetition
-        OnlineTerminationReason.FIFTY_MOVE_RULE -> R.string.online_draw_by_fifty_move_rule
-        OnlineTerminationReason.SEVENTY_FIVE_MOVE_RULE -> R.string.online_draw_by_seventy_five_move_rule
-        else -> null
-      }
-  }
+private fun resultRes(result: OnlineGameResult, reason: OnlineTerminationReason?): Int? = when (result) {
+  OnlineGameResult.WHITE_WON ->
+    when (reason) {
+      OnlineTerminationReason.CHECKMATE -> R.string.online_white_wins_by_checkmate
+
+      OnlineTerminationReason.RESIGNATION -> R.string.online_white_wins_by_resignation
+
+      OnlineTerminationReason.STALEMATE,
+      OnlineTerminationReason.AGREEMENT,
+      OnlineTerminationReason.INSUFFICIENT_MATERIAL,
+      OnlineTerminationReason.FIFTY_MOVE_RULE,
+      OnlineTerminationReason.SEVENTY_FIVE_MOVE_RULE,
+      OnlineTerminationReason.THREEFOLD_REPETITION,
+      OnlineTerminationReason.FIVEFOLD_REPETITION,
+      null,
+      -> null
+    }
+
+  OnlineGameResult.BLACK_WON ->
+    when (reason) {
+      OnlineTerminationReason.CHECKMATE -> R.string.online_black_wins_by_checkmate
+
+      OnlineTerminationReason.RESIGNATION -> R.string.online_black_wins_by_resignation
+
+      OnlineTerminationReason.STALEMATE,
+      OnlineTerminationReason.AGREEMENT,
+      OnlineTerminationReason.INSUFFICIENT_MATERIAL,
+      OnlineTerminationReason.FIFTY_MOVE_RULE,
+      OnlineTerminationReason.SEVENTY_FIVE_MOVE_RULE,
+      OnlineTerminationReason.THREEFOLD_REPETITION,
+      OnlineTerminationReason.FIVEFOLD_REPETITION,
+      null,
+      -> null
+    }
+
+  OnlineGameResult.DRAW ->
+    when (reason) {
+      OnlineTerminationReason.STALEMATE -> R.string.online_draw_by_stalemate
+
+      OnlineTerminationReason.AGREEMENT -> R.string.online_draw_by_agreement
+
+      OnlineTerminationReason.INSUFFICIENT_MATERIAL -> R.string.online_draw_by_insufficient_material
+
+      OnlineTerminationReason.THREEFOLD_REPETITION -> R.string.online_draw_by_threefold_repetition
+
+      OnlineTerminationReason.FIVEFOLD_REPETITION -> R.string.online_draw_by_fivefold_repetition
+
+      OnlineTerminationReason.FIFTY_MOVE_RULE -> R.string.online_draw_by_fifty_move_rule
+
+      OnlineTerminationReason.SEVENTY_FIVE_MOVE_RULE -> R.string.online_draw_by_seventy_five_move_rule
+
+      OnlineTerminationReason.CHECKMATE,
+      OnlineTerminationReason.RESIGNATION,
+      null,
+      -> null
+    }
+}
 
 @StringRes
-private fun errorRes(reason: CommandRejection): Int =
-  when (reason) {
-    CommandRejection.ILLEGAL_MOVE -> R.string.online_error_illegal_move
-    CommandRejection.NOT_YOUR_TURN -> R.string.online_error_not_your_turn
-    CommandRejection.GAME_NOT_READY -> R.string.online_error_game_not_ready
-    CommandRejection.GAME_FINISHED -> R.string.online_error_game_finished
-    CommandRejection.DRAW_NOT_CLAIMABLE -> R.string.online_error_draw_not_claimable
-    else -> R.string.online_error_generic
-  }
+private fun errorRes(reason: CommandRejection): Int = when (reason) {
+  CommandRejection.ILLEGAL_MOVE -> R.string.online_error_illegal_move
+
+  CommandRejection.NOT_YOUR_TURN -> R.string.online_error_not_your_turn
+
+  CommandRejection.GAME_NOT_READY -> R.string.online_error_game_not_ready
+
+  CommandRejection.GAME_FINISHED -> R.string.online_error_game_finished
+
+  CommandRejection.DRAW_NOT_CLAIMABLE -> R.string.online_error_draw_not_claimable
+
+  CommandRejection.UNSUPPORTED_PROTOCOL_VERSION,
+  CommandRejection.MALFORMED_COMMAND,
+  CommandRejection.REVISION_CONFLICT,
+  CommandRejection.NO_DRAW_OFFER,
+  CommandRejection.DRAW_ALREADY_OFFERED,
+  CommandRejection.UNKNOWN,
+  -> R.string.online_error_generic
+}
 
 @Preview(name = "Phone", widthDp = 360, heightDp = 640, showBackground = true)
 @Composable

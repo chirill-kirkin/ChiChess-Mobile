@@ -19,10 +19,10 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import kotlinx.coroutines.test.runTest
 
 private const val TOKEN = "test-token"
 private const val GAME_ID = "game-1"
@@ -34,7 +34,11 @@ class RemoteOnlineGameRepositoryTest {
   @Test
   fun `createGame sends bearer token and maps the response`() = runTest {
     val requests = mutableListOf<RecordedRequest>()
-    val repository = repository(requests, HttpStatusCode.Created, """{"gameId":"$GAME_ID","inviteCode":"$INVITE_CODE"}""")
+    val repository = repository(
+      requests,
+      HttpStatusCode.Created,
+      """{"gameId":"$GAME_ID","inviteCode":"$INVITE_CODE"}""",
+    )
 
     val created = repository.createGame()
 
@@ -60,19 +64,28 @@ class RemoteOnlineGameRepositoryTest {
 
   @Test
   fun `joinGame maps GAME_NOT_FOUND`() = runTest {
-    val result = repository(status = HttpStatusCode.NotFound, body = errorBody(GAME_NOT_FOUND_CODE)).joinGame(INVITE_CODE)
+    val result = repository(
+      status = HttpStatusCode.NotFound,
+      body = errorBody(GAME_NOT_FOUND_CODE),
+    ).joinGame(INVITE_CODE)
     assertEquals(JoinGameResult.NotFound, result)
   }
 
   @Test
   fun `joinGame maps CANNOT_JOIN_OWN_GAME`() = runTest {
-    val result = repository(status = HttpStatusCode.Conflict, body = errorBody(CANNOT_JOIN_OWN_GAME_CODE)).joinGame(INVITE_CODE)
+    val result = repository(
+      status = HttpStatusCode.Conflict,
+      body = errorBody(CANNOT_JOIN_OWN_GAME_CODE),
+    ).joinGame(INVITE_CODE)
     assertEquals(JoinGameResult.OwnGame, result)
   }
 
   @Test
   fun `joinGame maps GAME_ALREADY_JOINED`() = runTest {
-    val result = repository(status = HttpStatusCode.Conflict, body = errorBody(GAME_ALREADY_JOINED_CODE)).joinGame(INVITE_CODE)
+    val result = repository(
+      status = HttpStatusCode.Conflict,
+      body = errorBody(GAME_ALREADY_JOINED_CODE),
+    ).joinGame(INVITE_CODE)
     assertEquals(JoinGameResult.AlreadyJoined, result)
   }
 
@@ -94,7 +107,10 @@ class RemoteOnlineGameRepositoryTest {
 
   @Test
   fun `snapshot maps NOT_A_GAME_PARTICIPANT`() = runTest {
-    val result = repository(status = HttpStatusCode.Forbidden, body = errorBody(NOT_A_GAME_PARTICIPANT_CODE)).snapshot(GAME_ID)
+    val result = repository(
+      status = HttpStatusCode.Forbidden,
+      body = errorBody(NOT_A_GAME_PARTICIPANT_CODE),
+    ).snapshot(GAME_ID)
     assertEquals(SnapshotResult.NotParticipant, result)
   }
 
@@ -106,7 +122,12 @@ class RemoteOnlineGameRepositoryTest {
 
   @Test
   fun `history maps every snapshot`() = runTest {
-    val body = "[${snapshotBody(color = "WHITE", status = "FINISHED", result = "WHITE_WON", terminationReason = "CHECKMATE")}]"
+    val body = "[${snapshotBody(
+      color = "WHITE",
+      status = "FINISHED",
+      result = "WHITE_WON",
+      terminationReason = "CHECKMATE",
+    )}]"
     val history = repository(status = HttpStatusCode.OK, body = body).history()
 
     val snapshot = history.single()
@@ -151,9 +172,8 @@ private fun snapshotBody(
   status: String,
   result: String? = null,
   terminationReason: String? = null,
-): String =
-  """{"gameId":"$GAME_ID","inviteCode":"$INVITE_CODE","yourColor":"$color","status":"$status",""" +
-    """"revision":$REVISION,"fen":"$START_FEN","result":${result.asJson()},"terminationReason":${terminationReason.asJson()}}"""
+): String = """{"gameId":"$GAME_ID","inviteCode":"$INVITE_CODE","yourColor":"$color","status":"$status",""" +
+  """"revision":$REVISION,"fen":"$START_FEN","result":${result.asJson()},"terminationReason":${terminationReason.asJson()}}"""
 
 private fun String?.asJson(): String = this?.let { "\"$it\"" } ?: "null"
 

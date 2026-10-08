@@ -6,9 +6,9 @@ import io.ktor.client.engine.mock.respond
 import io.ktor.client.request.get
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlinx.coroutines.test.runTest
 
 private const val STALE_TOKEN = "stale-token"
 private const val FRESH_TOKEN = "fresh-token"

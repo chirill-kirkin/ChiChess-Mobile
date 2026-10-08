@@ -8,8 +8,8 @@ import com.github.chirillkirkin.mvu.Update
 import com.github.chirillkirkin.mvu.update
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.scopes.ViewModelScoped
-import javax.inject.Inject
 import kotlinx.coroutines.flow.emptyFlow
+import javax.inject.Inject
 
 data object HomeState
 
@@ -42,10 +42,10 @@ class HomeStore @Inject constructor() :
   )
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(
-  store: HomeStore,
-) : ViewModel(), MVU<HomeMessage, HomeState, HomeCommand> by store {
-  init {
-    launchIn(viewModelScope)
+class HomeViewModel @Inject constructor(store: HomeStore) :
+  ViewModel(),
+  MVU<HomeMessage, HomeState, HomeCommand> by store {
+    init {
+      launchIn(viewModelScope)
+    }
   }
-}

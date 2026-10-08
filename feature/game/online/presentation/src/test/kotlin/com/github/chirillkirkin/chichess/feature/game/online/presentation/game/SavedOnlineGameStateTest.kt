@@ -37,18 +37,17 @@ class SavedOnlineGameStateTest {
     assertEquals(initial, initial.restoredFrom(initial.toSavedOnlineGame(), engine))
   }
 
-  private fun snapshotMessage() =
-    OnlineGameMessage.Event(
-      OnlineGameEvent.Snapshot(
-        OnlineGameSnapshot(
-          gameId = GAME_ID,
-          inviteCode = INVITE_CODE,
-          yourColor = PieceColor.WHITE,
-          status = OnlineGameStatus.IN_PROGRESS,
-          revision = REVISION,
-          fen = Fen(START_FEN),
-        ),
-        opponentConnected = true,
+  private fun snapshotMessage() = OnlineGameMessage.Event(
+    OnlineGameEvent.Snapshot(
+      OnlineGameSnapshot(
+        gameId = GAME_ID,
+        inviteCode = INVITE_CODE,
+        yourColor = PieceColor.WHITE,
+        status = OnlineGameStatus.IN_PROGRESS,
+        revision = REVISION,
+        fen = Fen(START_FEN),
       ),
-    )
+      opponentConnected = true,
+    ),
+  )
 }

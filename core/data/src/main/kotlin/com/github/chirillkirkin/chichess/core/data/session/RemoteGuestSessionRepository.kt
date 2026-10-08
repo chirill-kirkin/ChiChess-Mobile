@@ -12,9 +12,7 @@ class RemoteGuestSessionRepository(
   private val httpClient: HttpClient,
   private val sessionStorage: GuestSessionStorage,
 ) : GuestSessionRepository {
-
-  override suspend fun currentSession(): GuestSession =
-    sessionStorage.read() ?: createSession()
+  override suspend fun currentSession(): GuestSession = sessionStorage.read() ?: createSession()
 
   override suspend fun refreshSession(): GuestSession = createSession()
 

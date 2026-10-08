@@ -7,19 +7,16 @@ import androidx.datastore.core.Serializer
 import androidx.datastore.dataStore
 import com.github.chirillkirkin.chichess.core.data.network.chiChessJson
 import com.github.chirillkirkin.chichess.core.domain.session.GuestSession
-import java.io.InputStream
-import java.io.OutputStream
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
+import java.io.InputStream
+import java.io.OutputStream
 
 private const val GUEST_SESSION_FILE = "guest_session.json"
 
 @Serializable
-private data class StoredGuestSession(
-  val sessionId: String,
-  val token: String,
-)
+private data class StoredGuestSession(val sessionId: String, val token: String)
 
 private object GuestSessionSerializer : Serializer<StoredGuestSession?> {
   override val defaultValue: StoredGuestSession? = null
@@ -43,11 +40,10 @@ private object GuestSessionSerializer : Serializer<StoredGuestSession?> {
 private val Context.guestSessionDataStore: DataStore<StoredGuestSession?> by
   dataStore(fileName = GUEST_SESSION_FILE, serializer = GuestSessionSerializer)
 
-class DataStoreGuestSessionStorage(
-  private val context: Context,
-) : GuestSessionStorage {
-  override suspend fun read(): GuestSession? =
-    context.guestSessionDataStore.data.first()?.let { GuestSession(it.sessionId, it.token) }
+class DataStoreGuestSessionStorage(private val context: Context) : GuestSessionStorage {
+  override suspend fun read(): GuestSession? = context.guestSessionDataStore.data
+    .first()
+    ?.let { GuestSession(it.sessionId, it.token) }
 
   override suspend fun save(session: GuestSession) {
     context.guestSessionDataStore.updateData { StoredGuestSession(session.sessionId, session.token) }

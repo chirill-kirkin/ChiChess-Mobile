@@ -1,11 +1,10 @@
 package com.github.chirillkirkin.chichess.feature.game.domain
 
-fun ChessMove.toUci(): String =
-  buildString {
-    append(from.toUci())
-    append(to.toUci())
-    promotion?.let { append(it.uciSymbol) }
-  }
+fun ChessMove.toUci(): String = buildString {
+  append(from.toUci())
+  append(to.toUci())
+  promotion?.let { append(it.uciSymbol) }
+}
 
 fun parseUci(uci: String): ChessMove? {
   if (uci.length !in UCI_MIN_LENGTH..UCI_MAX_LENGTH) return null
@@ -37,11 +36,10 @@ private val PromotionPiece.uciSymbol: Char
       PromotionPiece.KNIGHT -> 'n'
     }
 
-private fun promotionFromUci(symbol: Char): PromotionPiece? =
-  when (symbol) {
-    'q' -> PromotionPiece.QUEEN
-    'r' -> PromotionPiece.ROOK
-    'b' -> PromotionPiece.BISHOP
-    'n' -> PromotionPiece.KNIGHT
-    else -> null
-  }
+private fun promotionFromUci(symbol: Char): PromotionPiece? = when (symbol) {
+  'q' -> PromotionPiece.QUEEN
+  'r' -> PromotionPiece.ROOK
+  'b' -> PromotionPiece.BISHOP
+  'n' -> PromotionPiece.KNIGHT
+  else -> null
+}

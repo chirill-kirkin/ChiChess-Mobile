@@ -26,12 +26,13 @@ import com.github.chirillkirkin.chichess.feature.home.presentation.HomeRoot
 private data object OnlineGameFailed
 
 @Composable
-fun MainNavigation() {
+fun MainNavigation(modifier: Modifier = Modifier) {
   val backStack = rememberNavBackStack(HomeRoute)
   val appName = stringResource(R.string.app_name)
 
   NavDisplay(
     backStack = backStack,
+    modifier = modifier,
     onBack = { backStack.removeLastOrNull() },
     entryDecorators =
       listOf(
@@ -56,6 +57,8 @@ fun MainNavigation() {
           OfflineGameRoot(modifier = Modifier.safeDrawingPadding())
         }
         entry<OnlineLobbyRoute> {
+          // The entry owns the lobby ViewModel so the game result can reach it through ResultEffect.
+          @Suppress("ViewModelInjection")
           val viewModel = hiltViewModel<OnlineLobbyViewModel>()
           ResultEffect<OnlineGameFailed> { viewModel.send(OnlineLobbyMessage.Failed(LobbyError.GENERIC)) }
 
@@ -73,7 +76,7 @@ fun MainNavigation() {
 
           OnlineGameRoot(
             gameId = key.gameId,
-            onGameFailed = {
+            onGameFail = {
               resultBus.sendResult(OnlineGameFailed)
               backStack.removeLastOrNull()
             },

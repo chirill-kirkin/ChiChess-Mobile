@@ -234,11 +234,7 @@ class ChesslibGameEngineTest {
     assertEquals(GameStatus.Draw(DrawReason.INSUFFICIENT_MATERIAL), engine.gameStatus(position))
   }
 
-  private fun queenEndgamePosition(
-    fen: String,
-    queenSquare: Square,
-    whiteKingSquare: Square,
-  ): ChessPosition =
+  private fun queenEndgamePosition(fen: String, queenSquare: Square, whiteKingSquare: Square): ChessPosition =
     ChessPosition.fromSnapshot(
       fen = Fen(fen),
       pieces =
@@ -250,31 +246,29 @@ class ChesslibGameEngineTest {
       sideToMove = PieceColor.BLACK,
     )
 
-  private fun promotionPosition(pawnSquare: Square): ChessPosition =
-    ChessPosition.fromSnapshot(
-      fen = Fen(PromotionPositionFenValue),
-      pieces =
-        mapOf(
-          pawnSquare to ChessPiece(PieceColor.WHITE, PieceType.PAWN),
-          Square(ChessFile.H, ChessRank.EIGHT) to
-            ChessPiece(PieceColor.BLACK, PieceType.KING),
-          Square(ChessFile.H, ChessRank.ONE) to
-            ChessPiece(PieceColor.WHITE, PieceType.KING),
-        ),
-      sideToMove = PieceColor.WHITE,
-    )
+  private fun promotionPosition(pawnSquare: Square): ChessPosition = ChessPosition.fromSnapshot(
+    fen = Fen(PromotionPositionFenValue),
+    pieces =
+      mapOf(
+        pawnSquare to ChessPiece(PieceColor.WHITE, PieceType.PAWN),
+        Square(ChessFile.H, ChessRank.EIGHT) to
+          ChessPiece(PieceColor.BLACK, PieceType.KING),
+        Square(ChessFile.H, ChessRank.ONE) to
+          ChessPiece(PieceColor.WHITE, PieceType.KING),
+      ),
+    sideToMove = PieceColor.WHITE,
+  )
 
-  private fun rookEndgamePosition(fen: String): ChessPosition =
-    ChessPosition.fromSnapshot(
-      fen = Fen(fen),
-      pieces =
-        mapOf(
-          Square(ChessFile.E, ChessRank.EIGHT) to ChessPiece(PieceColor.BLACK, PieceType.KING),
-          Square(ChessFile.E, ChessRank.ONE) to ChessPiece(PieceColor.WHITE, PieceType.KING),
-          Square(ChessFile.H, ChessRank.ONE) to ChessPiece(PieceColor.WHITE, PieceType.ROOK),
-        ),
-      sideToMove = PieceColor.WHITE,
-    )
+  private fun rookEndgamePosition(fen: String): ChessPosition = ChessPosition.fromSnapshot(
+    fen = Fen(fen),
+    pieces =
+      mapOf(
+        Square(ChessFile.E, ChessRank.EIGHT) to ChessPiece(PieceColor.BLACK, PieceType.KING),
+        Square(ChessFile.E, ChessRank.ONE) to ChessPiece(PieceColor.WHITE, PieceType.KING),
+        Square(ChessFile.H, ChessRank.ONE) to ChessPiece(PieceColor.WHITE, PieceType.ROOK),
+      ),
+    sideToMove = PieceColor.WHITE,
+  )
 
   private companion object {
     const val InitialLegalMoveCount = 20

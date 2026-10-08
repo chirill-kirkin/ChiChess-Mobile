@@ -25,11 +25,8 @@ internal const val CANNOT_JOIN_OWN_GAME_CODE = "CANNOT_JOIN_OWN_GAME"
 internal const val GAME_ALREADY_JOINED_CODE = "GAME_ALREADY_JOINED"
 internal const val NOT_A_GAME_PARTICIPANT_CODE = "NOT_A_GAME_PARTICIPANT"
 
-class RemoteOnlineGameRepository(
-  private val httpClient: HttpClient,
-) : OnlineGameRepository {
-  override suspend fun createGame(): CreatedGame =
-    httpClient.post(GAME_PATH).body<CreateGameResponse>().toCreatedGame()
+class RemoteOnlineGameRepository(private val httpClient: HttpClient) : OnlineGameRepository {
+  override suspend fun createGame(): CreatedGame = httpClient.post(GAME_PATH).body<CreateGameResponse>().toCreatedGame()
 
   override suspend fun joinGame(inviteCode: String): JoinGameResult {
     val response = httpClient.post(GAME_JOIN_PATH) {
@@ -59,20 +56,17 @@ class RemoteOnlineGameRepository(
     }
   }
 
-  override suspend fun history(): List<OnlineGameSnapshot> =
-    httpClient.get(GAMES_HISTORY_PATH)
-      .body<List<GameSnapshotResponse>>()
-      .map(GameSnapshotResponse::toSnapshot)
+  override suspend fun history(): List<OnlineGameSnapshot> = httpClient
+    .get(GAMES_HISTORY_PATH)
+    .body<List<GameSnapshotResponse>>()
+    .map(GameSnapshotResponse::toSnapshot)
 
-  private suspend fun HttpResponse.errorCode(): String? =
-    try {
-      body<ApiErrorResponse>().code
-    } catch (_: SerializationException) {
-      null
-    }
+  private suspend fun HttpResponse.errorCode(): String? = try {
+    body<ApiErrorResponse>().code
+  } catch (_: SerializationException) {
+    null
+  }
 }
 
-class UnexpectedResponse(
-  val status: Int,
-  val code: String?,
-) : RuntimeException("Unexpected response $status (code=$code)")
+class UnexpectedResponse(val status: Int, val code: String?) :
+  RuntimeException("Unexpected response $status" + code?.let { " (code=$it)" }.orEmpty())

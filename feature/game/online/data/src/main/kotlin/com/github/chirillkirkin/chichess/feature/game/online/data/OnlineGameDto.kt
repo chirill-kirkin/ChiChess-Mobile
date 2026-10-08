@@ -11,20 +11,13 @@ import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineTermin
 import kotlinx.serialization.Serializable
 
 @Serializable
-internal data class CreateGameResponse(
-  val gameId: String,
-  val inviteCode: String,
-)
+internal data class CreateGameResponse(val gameId: String, val inviteCode: String)
 
 @Serializable
-internal data class JoinGameRequest(
-  val inviteCode: String,
-)
+internal data class JoinGameRequest(val inviteCode: String)
 
 @Serializable
-internal data class JoinGameResponse(
-  val gameId: String,
-)
+internal data class JoinGameResponse(val gameId: String)
 
 @Serializable
 internal data class GameSnapshotResponse(
@@ -41,9 +34,7 @@ internal data class GameSnapshotResponse(
 )
 
 @Serializable
-internal data class ApiErrorResponse(
-  val code: String,
-)
+internal data class ApiErrorResponse(val code: String)
 
 @Serializable
 internal enum class ApiPieceColor { WHITE, BLACK }
@@ -67,52 +58,46 @@ internal enum class ApiTerminationReason {
   FIVEFOLD_REPETITION,
 }
 
-internal fun CreateGameResponse.toCreatedGame(): CreatedGame =
-  CreatedGame(gameId = gameId, inviteCode = inviteCode)
+internal fun CreateGameResponse.toCreatedGame(): CreatedGame = CreatedGame(gameId = gameId, inviteCode = inviteCode)
 
-internal fun GameSnapshotResponse.toSnapshot(): OnlineGameSnapshot =
-  OnlineGameSnapshot(
-    gameId = gameId,
-    inviteCode = inviteCode,
-    yourColor = yourColor.toPieceColor(),
-    status = status.toStatus(),
-    revision = revision,
-    fen = Fen(fen),
-    lastMove = lastMove?.let(::parseUci),
-    pendingDrawOfferBy = pendingDrawOfferBy?.toPieceColor(),
-    result = result?.toResult(),
-    terminationReason = terminationReason?.toTerminationReason(),
-  )
+internal fun GameSnapshotResponse.toSnapshot(): OnlineGameSnapshot = OnlineGameSnapshot(
+  gameId = gameId,
+  inviteCode = inviteCode,
+  yourColor = yourColor.toPieceColor(),
+  status = status.toStatus(),
+  revision = revision,
+  fen = Fen(fen),
+  lastMove = lastMove?.let(::parseUci),
+  pendingDrawOfferBy = pendingDrawOfferBy?.toPieceColor(),
+  result = result?.toResult(),
+  terminationReason = terminationReason?.toTerminationReason(),
+)
 
-internal fun ApiPieceColor.toPieceColor(): PieceColor =
-  when (this) {
-    ApiPieceColor.WHITE -> PieceColor.WHITE
-    ApiPieceColor.BLACK -> PieceColor.BLACK
-  }
+internal fun ApiPieceColor.toPieceColor(): PieceColor = when (this) {
+  ApiPieceColor.WHITE -> PieceColor.WHITE
+  ApiPieceColor.BLACK -> PieceColor.BLACK
+}
 
-internal fun ApiGameStatus.toStatus(): OnlineGameStatus =
-  when (this) {
-    ApiGameStatus.WAITING_FOR_OPPONENT -> OnlineGameStatus.WAITING_FOR_OPPONENT
-    ApiGameStatus.IN_PROGRESS -> OnlineGameStatus.IN_PROGRESS
-    ApiGameStatus.FINISHED -> OnlineGameStatus.FINISHED
-  }
+internal fun ApiGameStatus.toStatus(): OnlineGameStatus = when (this) {
+  ApiGameStatus.WAITING_FOR_OPPONENT -> OnlineGameStatus.WAITING_FOR_OPPONENT
+  ApiGameStatus.IN_PROGRESS -> OnlineGameStatus.IN_PROGRESS
+  ApiGameStatus.FINISHED -> OnlineGameStatus.FINISHED
+}
 
-internal fun ApiGameResult.toResult(): OnlineGameResult =
-  when (this) {
-    ApiGameResult.WHITE_WON -> OnlineGameResult.WHITE_WON
-    ApiGameResult.BLACK_WON -> OnlineGameResult.BLACK_WON
-    ApiGameResult.DRAW -> OnlineGameResult.DRAW
-  }
+internal fun ApiGameResult.toResult(): OnlineGameResult = when (this) {
+  ApiGameResult.WHITE_WON -> OnlineGameResult.WHITE_WON
+  ApiGameResult.BLACK_WON -> OnlineGameResult.BLACK_WON
+  ApiGameResult.DRAW -> OnlineGameResult.DRAW
+}
 
-internal fun ApiTerminationReason.toTerminationReason(): OnlineTerminationReason =
-  when (this) {
-    ApiTerminationReason.CHECKMATE -> OnlineTerminationReason.CHECKMATE
-    ApiTerminationReason.STALEMATE -> OnlineTerminationReason.STALEMATE
-    ApiTerminationReason.RESIGNATION -> OnlineTerminationReason.RESIGNATION
-    ApiTerminationReason.AGREEMENT -> OnlineTerminationReason.AGREEMENT
-    ApiTerminationReason.INSUFFICIENT_MATERIAL -> OnlineTerminationReason.INSUFFICIENT_MATERIAL
-    ApiTerminationReason.FIFTY_MOVE_RULE -> OnlineTerminationReason.FIFTY_MOVE_RULE
-    ApiTerminationReason.SEVENTY_FIVE_MOVE_RULE -> OnlineTerminationReason.SEVENTY_FIVE_MOVE_RULE
-    ApiTerminationReason.THREEFOLD_REPETITION -> OnlineTerminationReason.THREEFOLD_REPETITION
-    ApiTerminationReason.FIVEFOLD_REPETITION -> OnlineTerminationReason.FIVEFOLD_REPETITION
-  }
+internal fun ApiTerminationReason.toTerminationReason(): OnlineTerminationReason = when (this) {
+  ApiTerminationReason.CHECKMATE -> OnlineTerminationReason.CHECKMATE
+  ApiTerminationReason.STALEMATE -> OnlineTerminationReason.STALEMATE
+  ApiTerminationReason.RESIGNATION -> OnlineTerminationReason.RESIGNATION
+  ApiTerminationReason.AGREEMENT -> OnlineTerminationReason.AGREEMENT
+  ApiTerminationReason.INSUFFICIENT_MATERIAL -> OnlineTerminationReason.INSUFFICIENT_MATERIAL
+  ApiTerminationReason.FIFTY_MOVE_RULE -> OnlineTerminationReason.FIFTY_MOVE_RULE
+  ApiTerminationReason.SEVENTY_FIVE_MOVE_RULE -> OnlineTerminationReason.SEVENTY_FIVE_MOVE_RULE
+  ApiTerminationReason.THREEFOLD_REPETITION -> OnlineTerminationReason.THREEFOLD_REPETITION
+  ApiTerminationReason.FIVEFOLD_REPETITION -> OnlineTerminationReason.FIVEFOLD_REPETITION
+}

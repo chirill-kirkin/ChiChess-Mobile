@@ -7,10 +7,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
-class OnlineLobbyViewModel @Inject constructor(
-  store: OnlineLobbyStore,
-) : ViewModel(), MVU<OnlineLobbyMessage, OnlineLobbyState, OnlineLobbyCommand> by store {
-  init {
-    launchIn(viewModelScope)
+class OnlineLobbyViewModel @Inject constructor(store: OnlineLobbyStore) :
+  ViewModel(),
+  MVU<OnlineLobbyMessage, OnlineLobbyState, OnlineLobbyCommand> by store {
+    init {
+      launchIn(viewModelScope)
+    }
   }
-}

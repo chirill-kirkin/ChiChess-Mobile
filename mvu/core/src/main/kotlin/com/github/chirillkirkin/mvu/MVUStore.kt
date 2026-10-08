@@ -60,8 +60,7 @@ public open class MVUStore<Message, State, Command> public constructor(
 
             onCommandException(command, throwable)
           }
-      }
-      .onEach(::send)
+      }.onEach(::send)
       .launchIn(scope)
 
     subscriptions.forEach { subscription ->

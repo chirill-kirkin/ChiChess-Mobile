@@ -37,14 +37,13 @@ class ChessModelsTest {
     }
   }
 
-  private fun expectedInitialPiece(square: Square): ChessPiece? =
-    when (square.rank) {
-      ChessRank.ONE -> ChessPiece(PieceColor.WHITE, backRankPieceTypes[square.file.ordinal])
-      ChessRank.TWO -> ChessPiece(PieceColor.WHITE, PieceType.PAWN)
-      ChessRank.SEVEN -> ChessPiece(PieceColor.BLACK, PieceType.PAWN)
-      ChessRank.EIGHT -> ChessPiece(PieceColor.BLACK, backRankPieceTypes[square.file.ordinal])
-      else -> null
-    }
+  private fun expectedInitialPiece(square: Square): ChessPiece? = when (square.rank) {
+    ChessRank.ONE -> ChessPiece(PieceColor.WHITE, backRankPieceTypes[square.file.ordinal])
+    ChessRank.TWO -> ChessPiece(PieceColor.WHITE, PieceType.PAWN)
+    ChessRank.SEVEN -> ChessPiece(PieceColor.BLACK, PieceType.PAWN)
+    ChessRank.EIGHT -> ChessPiece(PieceColor.BLACK, backRankPieceTypes[square.file.ordinal])
+    ChessRank.THREE, ChessRank.FOUR, ChessRank.FIVE, ChessRank.SIX -> null
+  }
 
   private companion object {
     const val ExpectedInitialFenValue =

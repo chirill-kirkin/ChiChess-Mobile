@@ -13,7 +13,11 @@ class UciTest {
 
   @Test
   fun `toUci appends the promotion symbol`() {
-    val move = ChessMove(Square(ChessFile.E, ChessRank.SEVEN), Square(ChessFile.E, ChessRank.EIGHT), PromotionPiece.QUEEN)
+    val move = ChessMove(
+      Square(ChessFile.E, ChessRank.SEVEN),
+      Square(ChessFile.E, ChessRank.EIGHT),
+      PromotionPiece.QUEEN,
+    )
     assertEquals("e7e8q", move.toUci())
   }
 
@@ -25,7 +29,11 @@ class UciTest {
 
   @Test
   fun `parseUci reads a promotion`() {
-    val expected = ChessMove(Square(ChessFile.A, ChessRank.SEVEN), Square(ChessFile.A, ChessRank.EIGHT), PromotionPiece.KNIGHT)
+    val expected = ChessMove(
+      Square(ChessFile.A, ChessRank.SEVEN),
+      Square(ChessFile.A, ChessRank.EIGHT),
+      PromotionPiece.KNIGHT,
+    )
     assertEquals(expected, parseUci("a7a8n"))
   }
 

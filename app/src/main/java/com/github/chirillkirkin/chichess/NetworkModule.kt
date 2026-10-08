@@ -53,17 +53,16 @@ object NetworkModule {
   @Provides
   @Singleton
   @AuthenticatedHttpClient
-  fun provideAuthenticatedHttpClient(
-    guestSessions: GuestSessionRepository,
-  ): HttpClient = createAuthenticatedChiChessHttpClient(
-    baseUrl = BuildConfig.DEV_SERVER_URL,
-    verboseLogging = BuildConfig.DEBUG,
-    tokenProvider = object : BearerTokenProvider {
-      override suspend fun currentToken(): String = guestSessions.currentSession().token
+  fun provideAuthenticatedHttpClient(guestSessions: GuestSessionRepository): HttpClient =
+    createAuthenticatedChiChessHttpClient(
+      baseUrl = BuildConfig.DEV_SERVER_URL,
+      verboseLogging = BuildConfig.DEBUG,
+      tokenProvider = object : BearerTokenProvider {
+        override suspend fun currentToken(): String = guestSessions.currentSession().token
 
-      override suspend fun refreshToken(): String = guestSessions.refreshSession().token
-    },
-  )
+        override suspend fun refreshToken(): String = guestSessions.refreshSession().token
+      },
+    )
 
   @Provides
   @Singleton

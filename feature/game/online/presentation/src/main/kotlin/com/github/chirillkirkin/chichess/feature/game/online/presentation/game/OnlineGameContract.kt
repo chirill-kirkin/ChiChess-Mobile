@@ -16,11 +16,7 @@ import kotlin.time.Duration
 enum class ConnectionStatus { CONNECTING, CONNECTED, CLOSED }
 
 /** A move applied locally and awaiting the server's confirmation. */
-data class PendingMove(
-  val commandId: String,
-  val expectedRevision: Long,
-  val move: ChessMove,
-)
+data class PendingMove(val commandId: String, val expectedRevision: Long, val move: ChessMove)
 
 data class OnlineGameState(
   val gameId: String,

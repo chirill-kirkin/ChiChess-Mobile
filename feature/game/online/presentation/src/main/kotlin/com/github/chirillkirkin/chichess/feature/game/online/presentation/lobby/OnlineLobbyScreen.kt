@@ -85,13 +85,12 @@ fun OnlineLobbyScreen(
 }
 
 @StringRes
-private fun lobbyErrorRes(error: LobbyError): Int =
-  when (error) {
-    LobbyError.NOT_FOUND -> R.string.online_join_error_not_found
-    LobbyError.OWN_GAME -> R.string.online_join_error_own_game
-    LobbyError.ALREADY_JOINED -> R.string.online_join_error_already_joined
-    LobbyError.GENERIC -> R.string.online_join_error_generic
-  }
+private fun lobbyErrorRes(error: LobbyError): Int = when (error) {
+  LobbyError.NOT_FOUND -> R.string.online_join_error_not_found
+  LobbyError.OWN_GAME -> R.string.online_join_error_own_game
+  LobbyError.ALREADY_JOINED -> R.string.online_join_error_already_joined
+  LobbyError.GENERIC -> R.string.online_join_error_generic
+}
 
 @Preview(showBackground = true)
 @Composable

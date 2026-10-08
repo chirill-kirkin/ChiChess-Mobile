@@ -11,25 +11,20 @@ data class BoardState(
 )
 
 sealed interface BoardMessage {
-  data class SquareClick(
-    val square: Square,
-  ) : BoardMessage
+  data class SquareClick(val square: Square) : BoardMessage
 }
 
-fun boardUpdate(
-  message: BoardMessage,
-  state: BoardState,
-): BoardState =
-  when (message) {
-    is BoardMessage.SquareClick -> {
-      val clickedSquare = message.square
-      val clickedPiece = state.position[clickedSquare]
-      when {
-        clickedSquare == state.selectedSquare -> state.copy(selectedSquare = null)
-        clickedPiece?.color == state.position.sideToMove ->
-          state.copy(selectedSquare = clickedSquare)
+fun boardUpdate(message: BoardMessage, state: BoardState): BoardState = when (message) {
+  is BoardMessage.SquareClick -> {
+    val clickedSquare = message.square
+    val clickedPiece = state.position[clickedSquare]
+    when {
+      clickedSquare == state.selectedSquare -> state.copy(selectedSquare = null)
 
-        else -> state
-      }
+      clickedPiece?.color == state.position.sideToMove ->
+        state.copy(selectedSquare = clickedSquare)
+
+      else -> state
     }
   }
+}

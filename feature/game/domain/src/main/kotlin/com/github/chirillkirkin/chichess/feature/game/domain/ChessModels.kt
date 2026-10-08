@@ -6,9 +6,7 @@ enum class PieceColor {
 }
 
 @JvmInline
-value class Fen(
-  val value: String,
-)
+value class Fen(val value: String)
 
 enum class PieceType {
   KING,
@@ -26,9 +24,7 @@ enum class PromotionPiece {
   KNIGHT,
 }
 
-enum class ChessFile(
-  val notation: Char,
-) {
+enum class ChessFile(val notation: Char) {
   A('a'),
   B('b'),
   C('c'),
@@ -39,9 +35,7 @@ enum class ChessFile(
   H('h'),
 }
 
-enum class ChessRank(
-  val notation: Int,
-) {
+enum class ChessRank(val notation: Int) {
   ONE(1),
   TWO(2),
   THREE(3),
@@ -57,15 +51,9 @@ enum class SquareColor {
   DARK,
 }
 
-data class ChessPiece(
-  val color: PieceColor,
-  val type: PieceType,
-)
+data class ChessPiece(val color: PieceColor, val type: PieceType)
 
-data class Square(
-  val file: ChessFile,
-  val rank: ChessRank,
-) {
+data class Square(val file: ChessFile, val rank: ChessRank) {
   val color: SquareColor
     get() =
       if ((file.ordinal + rank.ordinal).isEven) {
@@ -75,11 +63,7 @@ data class Square(
       }
 }
 
-data class ChessMove(
-  val from: Square,
-  val to: Square,
-  val promotion: PromotionPiece? = null,
-)
+data class ChessMove(val from: Square, val to: Square, val promotion: PromotionPiece? = null)
 
 @ConsistentCopyVisibility
 data class ChessPosition private constructor(
