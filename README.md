@@ -21,6 +21,7 @@ The project follows an MVU (so called Model-View-Update, inspired by [The Elm Ar
 - **Networking** — Ktor, WebSockets
 - **Async / Serialization** — Kotlin Coroutines, Kotlinx Serialization
 - **Chess rules & validation library** — [chesslib](https://github.com/bhlangonijr/chesslib)
+- **Lint** — Detekt, Ktlint
 
 ## Planned features
 - **Offline game against computer**
