@@ -6,11 +6,22 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -19,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.chirillkirkin.chichess.core.designsystem.theme.ChiChessTheme
+import com.github.chirillkirkin.chichess.feature.game.board.BoardFacing
 import com.github.chirillkirkin.chichess.feature.game.board.BoardMessage
 import com.github.chirillkirkin.chichess.feature.game.board.ChessBoard
 import com.github.chirillkirkin.chichess.feature.game.domain.DrawReason
@@ -28,18 +40,96 @@ import com.github.chirillkirkin.chichess.feature.game.domain.PieceColor
 private val GameResultSpace = 64.dp
 
 @Composable
-fun OfflineGameRoot(modifier: Modifier = Modifier, viewModel: OfflineGameViewModel = hiltViewModel()) {
+fun OfflineGameRoot(
+  onBack: () -> Unit,
+  modifier: Modifier = Modifier,
+  viewModel: OfflineGameViewModel = hiltViewModel(),
+) {
   val state by viewModel.state.collectAsStateWithLifecycle()
 
   OfflineGameScreen(
     state = state,
     onMessage = viewModel::send,
+    onBack = onBack,
     modifier = modifier,
   )
 }
 
 @Composable
 fun OfflineGameScreen(
+  state: OfflineGameState,
+  onMessage: (OfflineGameMessage) -> Unit,
+  onBack: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  var isSettingsVisible by rememberSaveable { mutableStateOf(false) }
+  var isNewGameConfirmationVisible by rememberSaveable { mutableStateOf(false) }
+
+  Scaffold(
+    modifier = modifier,
+    topBar = {
+      OfflineGameTopBar(
+        onBack = onBack,
+        onSettingsClick = { isSettingsVisible = true },
+      )
+    },
+  ) { innerPadding ->
+    OfflineGameContent(
+      state = state,
+      onMessage = onMessage,
+      modifier = Modifier.padding(innerPadding),
+    )
+  }
+
+  if (isSettingsVisible) {
+    OfflineGameSettingsSheet(
+      boardLayout = state.boardLayout,
+      onBoardLayoutSelect = { layout -> onMessage(OfflineGameMessage.BoardLayoutSelected(layout)) },
+      onNewGameClick = {
+        isSettingsVisible = false
+        isNewGameConfirmationVisible = true
+      },
+      onDismiss = { isSettingsVisible = false },
+    )
+  }
+
+  if (isNewGameConfirmationVisible) {
+    NewGameConfirmationDialog(
+      onConfirm = {
+        isNewGameConfirmationVisible = false
+        onMessage(OfflineGameMessage.NewGame)
+      },
+      onDismiss = { isNewGameConfirmationVisible = false },
+    )
+  }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun OfflineGameTopBar(onBack: () -> Unit, onSettingsClick: () -> Unit) {
+  TopAppBar(
+    title = { Text(stringResource(R.string.over_the_board)) },
+    navigationIcon = {
+      IconButton(onClick = onBack) {
+        Icon(
+          imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+          contentDescription = stringResource(R.string.navigate_back),
+        )
+      }
+    },
+    actions = {
+      IconButton(onClick = onSettingsClick) {
+        Icon(
+          imageVector = Icons.Filled.Settings,
+          contentDescription = stringResource(R.string.game_settings),
+        )
+      }
+    },
+  )
+}
+
+@Composable
+private fun OfflineGameContent(
   state: OfflineGameState,
   onMessage: (OfflineGameMessage) -> Unit,
   modifier: Modifier = Modifier,
@@ -61,6 +151,7 @@ fun OfflineGameScreen(
           onMessage(OfflineGameMessage.Board(BoardMessage.SquareClick(square)))
         },
         modifier = Modifier.size(boardSize),
+        facing = state.boardFacing(),
         promotionSquare = state.pendingPromotion?.to,
         onPromotionSelect = { piece -> onMessage(OfflineGameMessage.PromotionSelected(piece)) },
         onPromotionDismiss = { onMessage(OfflineGameMessage.PromotionDismissed) },
@@ -87,6 +178,18 @@ fun OfflineGameScreen(
       }
     }
   }
+}
+
+private fun OfflineGameState.boardFacing(): BoardFacing = when (boardLayout) {
+  OfflineBoardLayout.STANDARD -> BoardFacing.BOTTOM
+
+  OfflineBoardLayout.BLACK_UPSIDE_DOWN -> BoardFacing.FACE_TO_FACE
+
+  OfflineBoardLayout.FLIP_AFTER_MOVE ->
+    when (board.position.sideToMove) {
+      PieceColor.WHITE -> BoardFacing.BOTTOM
+      PieceColor.BLACK -> BoardFacing.TOP
+    }
 }
 
 @Composable
@@ -123,6 +226,7 @@ private fun OfflineGameScreenPreview() {
     OfflineGameScreen(
       state = OfflineGameState(),
       onMessage = {},
+      onBack = {},
     )
   }
 }

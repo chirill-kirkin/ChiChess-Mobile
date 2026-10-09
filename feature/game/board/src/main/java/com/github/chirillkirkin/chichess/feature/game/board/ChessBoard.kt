@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.layout.ContentScale
@@ -46,6 +47,7 @@ import com.github.chirillkirkin.chichess.core.designsystem.R as DesignSystemR
 
 private const val EqualBoardSegmentWeight = 1f
 private val PromotionPieceSize = 48.dp
+private const val UpsideDownRotationDegrees = 180f
 
 private object PromotionMenuPositionProvider : PopupPositionProvider {
   override fun calculatePosition(
@@ -76,6 +78,7 @@ fun ChessBoard(
   onSquareClick: (Square) -> Unit,
   modifier: Modifier = Modifier,
   perspective: PieceColor = PieceColor.WHITE,
+  facing: BoardFacing = BoardFacing.BOTTOM,
   promotionSquare: Square? = null,
   onPromotionSelect: (PromotionPiece) -> Unit = {},
   onPromotionDismiss: () -> Unit = {},
@@ -84,6 +87,8 @@ fun ChessBoard(
   val ranks = if (perspective == PieceColor.WHITE) ChessRank.entries.asReversed() else ChessRank.entries
   val files = if (perspective == PieceColor.WHITE) ChessFile.entries else ChessFile.entries.asReversed()
   val leftFile = files.first()
+  val rightFile = files.last()
+  val topRank = ranks.first()
   val bottomRank = ranks.last()
 
   BoxWithConstraints(
@@ -98,11 +103,7 @@ fun ChessBoard(
           files.forEach { file ->
             val square = Square(file, rank)
             val isSelected = square == state.selectedSquare
-            val isLegalTarget = square in state.legalTargets
-            val isCheckedKing = square == state.checkedKingSquare
-            val squareColor = square.color
-              .toBoardColor(colors)
-              .withHighlight(isCheckedKing, isSelected, isLegalTarget, colors)
+            val squareColor = square.toBoardColor(state, colors)
             val piece = state.position[square]
 
             Box(
@@ -119,17 +120,21 @@ fun ChessBoard(
                   ),
               contentAlignment = Alignment.Center,
             ) {
-              if (piece != null) PieceImage(piece)
+              if (piece != null) PieceImage(piece, isUpsideDown = facing.isUpsideDown(piece.color, perspective))
 
-              SquareCoordinates(
-                rank = rank.takeIf { file == leftFile },
-                file = file.takeIf { rank == bottomRank },
+              BoardSquareCoordinates(
+                facing = facing,
+                bottomPlayerRank = rank.takeIf { file == leftFile },
+                bottomPlayerFile = file.takeIf { rank == bottomRank },
+                topPlayerRank = rank.takeIf { file == rightFile },
+                topPlayerFile = file.takeIf { rank == topRank },
                 color = square.color.toCoordinateColor(colors),
               )
 
               if (square == promotionSquare) {
                 PromotionMenu(
                   color = state.position.sideToMove,
+                  isUpsideDown = facing.isUpsideDown(state.position.sideToMove, perspective),
                   onPieceSelect = onPromotionSelect,
                   onDismiss = onPromotionDismiss,
                 )
@@ -143,7 +148,12 @@ fun ChessBoard(
 }
 
 @Composable
-private fun PromotionMenu(color: PieceColor, onPieceSelect: (PromotionPiece) -> Unit, onDismiss: () -> Unit) {
+private fun PromotionMenu(
+  color: PieceColor,
+  isUpsideDown: Boolean,
+  onPieceSelect: (PromotionPiece) -> Unit,
+  onDismiss: () -> Unit,
+) {
   Popup(
     popupPositionProvider = PromotionMenuPositionProvider,
     onDismissRequest = onDismiss,
@@ -162,7 +172,7 @@ private fun PromotionMenu(color: PieceColor, onPieceSelect: (PromotionPiece) -> 
                 .size(PromotionPieceSize)
                 .clickable { onPieceSelect(promotionPiece) },
           ) {
-            PieceImage(ChessPiece(color, promotionPiece.toPieceType()))
+            PieceImage(ChessPiece(color, promotionPiece.toPieceType()), isUpsideDown)
           }
         }
       }
@@ -171,13 +181,33 @@ private fun PromotionMenu(color: PieceColor, onPieceSelect: (PromotionPiece) -> 
 }
 
 @Composable
-private fun PieceImage(piece: ChessPiece) {
+private fun PieceImage(piece: ChessPiece, isUpsideDown: Boolean) {
   Image(
     painter = painterResource(piece.drawableResource()),
     contentDescription = null,
-    modifier = Modifier.fillMaxSize(),
+    modifier = Modifier.fillMaxSize().then(if (isUpsideDown) Modifier.rotate(UpsideDownRotationDegrees) else Modifier),
     contentScale = ContentScale.Fit,
   )
+}
+
+@Composable
+private fun BoxScope.BoardSquareCoordinates(
+  facing: BoardFacing,
+  bottomPlayerRank: ChessRank?,
+  bottomPlayerFile: ChessFile?,
+  topPlayerRank: ChessRank?,
+  topPlayerFile: ChessFile?,
+  color: Color,
+) {
+  if (facing.showsBottomCoordinates) {
+    SquareCoordinates(rank = bottomPlayerRank, file = bottomPlayerFile, color = color)
+  }
+
+  if (facing.showsTopCoordinates) {
+    Box(modifier = Modifier.matchParentSize().rotate(UpsideDownRotationDegrees)) {
+      SquareCoordinates(rank = topPlayerRank, file = topPlayerFile, color = color)
+    }
+  }
 }
 
 @Composable
@@ -203,12 +233,39 @@ private fun BoxScope.SquareCoordinate(text: String, alignment: Alignment, color:
   )
 }
 
+private val BoardFacing.showsBottomCoordinates: Boolean
+  get() = when (this) {
+    BoardFacing.BOTTOM, BoardFacing.FACE_TO_FACE -> true
+    BoardFacing.TOP -> false
+  }
+
+private val BoardFacing.showsTopCoordinates: Boolean
+  get() = when (this) {
+    BoardFacing.TOP, BoardFacing.FACE_TO_FACE -> true
+    BoardFacing.BOTTOM -> false
+  }
+
+private fun BoardFacing.isUpsideDown(color: PieceColor, perspective: PieceColor): Boolean = when (this) {
+  BoardFacing.BOTTOM -> false
+  BoardFacing.TOP -> true
+  BoardFacing.FACE_TO_FACE -> color != perspective
+}
+
 private fun PromotionPiece.toPieceType(): PieceType = when (this) {
   PromotionPiece.QUEEN -> PieceType.QUEEN
   PromotionPiece.ROOK -> PieceType.ROOK
   PromotionPiece.BISHOP -> PieceType.BISHOP
   PromotionPiece.KNIGHT -> PieceType.KNIGHT
 }
+
+private fun Square.toBoardColor(state: BoardState, colors: ChiChessColors): Color = color
+  .toBoardColor(colors)
+  .withHighlight(
+    isCheckedKing = this == state.checkedKingSquare,
+    isSelected = this == state.selectedSquare,
+    isLegalTarget = this in state.legalTargets,
+    colors = colors,
+  )
 
 private fun Color.withHighlight(
   isCheckedKing: Boolean,

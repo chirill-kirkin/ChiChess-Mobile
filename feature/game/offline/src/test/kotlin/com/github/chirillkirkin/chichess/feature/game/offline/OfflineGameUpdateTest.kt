@@ -248,6 +248,28 @@ class OfflineGameUpdateTest {
     assertEquals(finishedState, finishedState.reduceBoardClick(Square(ChessFile.E, ChessRank.EIGHT)))
   }
 
+  @Test
+  fun `selecting a board layout changes only the layout`() {
+    val playedState =
+      OfflineGameState().reduceMove(Square(ChessFile.E, ChessRank.TWO), Square(ChessFile.E, ChessRank.FOUR))
+
+    val updatedState =
+      playedState.reduceMessage(OfflineGameMessage.BoardLayoutSelected(OfflineBoardLayout.FLIP_AFTER_MOVE))
+
+    assertEquals(playedState.copy(boardLayout = OfflineBoardLayout.FLIP_AFTER_MOVE), updatedState)
+  }
+
+  @Test
+  fun `new game resets the game and keeps the board layout`() {
+    val playedState =
+      OfflineGameState(boardLayout = OfflineBoardLayout.BLACK_UPSIDE_DOWN)
+        .reduceMove(Square(ChessFile.E, ChessRank.TWO), Square(ChessFile.E, ChessRank.FOUR))
+
+    val newGameState = playedState.reduceMessage(OfflineGameMessage.NewGame)
+
+    assertEquals(OfflineGameState(boardLayout = OfflineBoardLayout.BLACK_UPSIDE_DOWN), newGameState)
+  }
+
   private fun promotionState(): OfflineGameState = OfflineGameState(
     board =
       BoardState(

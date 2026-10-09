@@ -8,4 +8,15 @@
     <string name="draw_by_seventy_five_move_rule">Draw by the seventy-five-move rule</string>
     <string name="draw_by_insufficient_material">Draw by insufficient material</string>
     <string name="claim_draw">Claim draw</string>
+    <string name="over_the_board">Over the board</string>
+    <string name="navigate_back">Back</string>
+    <string name="game_settings">Game settings</string>
+    <string name="new_game">New game</string>
+    <string name="board_layout_title">Board layout</string>
+    <string name="board_layout_standard">Standard</string>
+    <string name="board_layout_black_upside_down">Black pieces upside down</string>
+    <string name="board_layout_flip_after_move">Flip pieces after each move</string>
+    <string name="new_game_confirmation_title">Start a new game?</string>
+    <string name="new_game_confirmation_text">The current game will be lost.</string>
+    <string name="cancel">Cancel</string>
 </resources>

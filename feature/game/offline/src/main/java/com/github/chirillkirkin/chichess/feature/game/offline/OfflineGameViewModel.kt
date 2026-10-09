@@ -26,11 +26,18 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.parcelize.Parcelize
 import javax.inject.Inject
 
+enum class OfflineBoardLayout {
+  STANDARD,
+  BLACK_UPSIDE_DOWN,
+  FLIP_AFTER_MOVE,
+}
+
 data class OfflineGameState(
   val board: BoardState = BoardState(position = initialChessPosition()),
   val pendingPromotion: ChessMove? = null,
   val gameStatus: GameStatus = GameStatus.Ongoing,
   val claimableDrawReason: DrawReason? = null,
+  val boardLayout: OfflineBoardLayout = OfflineBoardLayout.STANDARD,
 )
 
 sealed interface OfflineGameMessage {
@@ -41,6 +48,10 @@ sealed interface OfflineGameMessage {
   data object PromotionDismissed : OfflineGameMessage
 
   data object ClaimDraw : OfflineGameMessage
+
+  data class BoardLayoutSelected(val layout: OfflineBoardLayout) : OfflineGameMessage
+
+  data object NewGame : OfflineGameMessage
 }
 
 internal fun offlineGameUpdate(gameEngine: ChessGameEngine): Update<OfflineGameMessage, OfflineGameState, Nothing> =
@@ -75,6 +86,16 @@ internal fun offlineGameUpdate(gameEngine: ChessGameEngine): Update<OfflineGameM
           } else {
             this
           }
+        }
+
+      is OfflineGameMessage.BoardLayoutSelected ->
+        state {
+          copy(boardLayout = message.layout)
+        }
+
+      OfflineGameMessage.NewGame ->
+        state {
+          OfflineGameState(boardLayout = boardLayout)
         }
     }
   }
@@ -147,11 +168,16 @@ private fun OfflineGameState.selectSquare(
 }
 
 @Parcelize
-internal data class SavedOfflineGameState(val fen: String, val drawReason: DrawReason?) : Parcelable
+internal data class SavedOfflineGameState(
+  val fen: String,
+  val drawReason: DrawReason?,
+  val boardLayout: OfflineBoardLayout,
+) : Parcelable
 
 private fun OfflineGameState.toSavedOfflineGame(): SavedOfflineGameState = SavedOfflineGameState(
   fen = board.position.fen.value,
   drawReason = (gameStatus as? GameStatus.Draw)?.reason,
+  boardLayout = boardLayout,
 )
 
 private fun OfflineGameState.restoredFrom(
@@ -165,6 +191,7 @@ private fun OfflineGameState.restoredFrom(
     gameStatus = status,
     claimableDrawReason =
       if (status == GameStatus.Ongoing) gameEngine.claimableDrawReason(position) else null,
+    boardLayout = saved.boardLayout,
   )
 }
 

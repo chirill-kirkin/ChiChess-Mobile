@@ -54,7 +54,7 @@ fun MainNavigation(modifier: Modifier = Modifier) {
           )
         }
         entry<OfflineGameRoute> {
-          OfflineGameRoot(modifier = Modifier.safeDrawingPadding())
+          OfflineGameRoot(onBack = { backStack.removeLastOrNull() })
         }
         entry<OnlineLobbyRoute> {
           // The entry owns the lobby ViewModel so the game result can reach it through ResultEffect.

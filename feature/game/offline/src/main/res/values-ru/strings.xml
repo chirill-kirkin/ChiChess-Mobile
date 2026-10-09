@@ -8,4 +8,15 @@
     <string name="draw_by_seventy_five_move_rule">Ничья: правило 75 ходов</string>
     <string name="draw_by_insufficient_material">Ничья: недостаточно материала для мата</string>
     <string name="claim_draw">Заявить ничью</string>
+    <string name="over_the_board">За доской</string>
+    <string name="navigate_back">Назад</string>
+    <string name="game_settings">Настройки игры</string>
+    <string name="new_game">Новая игра</string>
+    <string name="board_layout_title">Расположение доски</string>
+    <string name="board_layout_standard">Стандартно</string>
+    <string name="board_layout_black_upside_down">Чёрные фигуры вверх ногами</string>
+    <string name="board_layout_flip_after_move">Переворачивать фигуры после каждого хода</string>
+    <string name="new_game_confirmation_title">Начать новую партию?</string>
+    <string name="new_game_confirmation_text">Текущая партия будет потеряна.</string>
+    <string name="cancel">Отмена</string>
 </resources>
