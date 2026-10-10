@@ -1,5 +1,8 @@
 package com.github.chirillkirkin.chichess.feature.game.board
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
@@ -18,36 +22,55 @@ import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
+import androidx.compose.ui.zIndex
 import com.github.chirillkirkin.chichess.core.designsystem.theme.ChiChessColors
 import com.github.chirillkirkin.chichess.core.designsystem.theme.ChiChessTheme
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessFile
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessPiece
+import com.github.chirillkirkin.chichess.feature.game.domain.ChessPosition
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessRank
 import com.github.chirillkirkin.chichess.feature.game.domain.PieceColor
 import com.github.chirillkirkin.chichess.feature.game.domain.PieceType
 import com.github.chirillkirkin.chichess.feature.game.domain.PromotionPiece
 import com.github.chirillkirkin.chichess.feature.game.domain.Square
 import com.github.chirillkirkin.chichess.feature.game.domain.SquareColor
+import kotlin.math.roundToInt
 import com.github.chirillkirkin.chichess.core.designsystem.R as DesignSystemR
 
 private const val EqualBoardSegmentWeight = 1f
 private val PromotionPieceSize = 48.dp
 private const val UpsideDownRotationDegrees = 180f
+private const val PieceMoveDurationMillis = 200
+private const val AnimationStart = 0f
+private const val AnimationEnd = 1f
+private const val StationaryPieceZIndex = 0f
+private const val MovingPieceZIndex = 1f
 
 private object PromotionMenuPositionProvider : PopupPositionProvider {
   override fun calculatePosition(
@@ -91,54 +114,128 @@ fun ChessBoard(
   val topRank = ranks.first()
   val bottomRank = ranks.last()
 
+  val pieceAnimation = rememberPieceAnimation(state.position)
+
   BoxWithConstraints(
     modifier = modifier,
     contentAlignment = Alignment.Center,
   ) {
     val boardSize = minOf(maxWidth, maxHeight)
 
-    Column(modifier = Modifier.size(boardSize)) {
-      ranks.forEach { rank ->
-        Row(modifier = Modifier.fillMaxWidth().weight(EqualBoardSegmentWeight)) {
-          files.forEach { file ->
-            val square = Square(file, rank)
-            val isSelected = square == state.selectedSquare
-            val squareColor = square.toBoardColor(state, colors)
-            val piece = state.position[square]
+    Box(modifier = Modifier.size(boardSize)) {
+      BoardGrid(ranks = ranks, files = files) { square ->
+        Box(
+          modifier =
+            Modifier
+              .matchParentSize()
+              .background(square.toBoardColor(state, colors))
+              .selectable(
+                selected = square == state.selectedSquare,
+                interactionSource = null,
+                indication = null,
+                onClick = { onSquareClick(square) },
+              ),
+        ) {
+          if (square == promotionSquare) {
+            PromotionMenu(
+              color = state.position.sideToMove,
+              isUpsideDown = facing.isUpsideDown(state.position.sideToMove, perspective),
+              onPieceSelect = onPromotionSelect,
+              onDismiss = onPromotionDismiss,
+            )
+          }
+        }
+      }
 
+      BoardPieces(
+        position = state.position,
+        animation = pieceAnimation,
+        ranks = ranks,
+        files = files,
+        squareSize = boardSize / files.size,
+        isUpsideDown = { piece -> facing.isUpsideDown(piece.color, perspective) },
+      )
+
+      BoardGrid(ranks = ranks, files = files) { square ->
+        BoardSquareCoordinates(
+          facing = facing,
+          bottomPlayerRank = square.rank.takeIf { square.file == leftFile },
+          bottomPlayerFile = square.file.takeIf { square.rank == bottomRank },
+          topPlayerRank = square.rank.takeIf { square.file == rightFile },
+          topPlayerFile = square.file.takeIf { square.rank == topRank },
+          color = square.color.toCoordinateColor(colors),
+        )
+      }
+    }
+  }
+}
+
+@Composable
+private fun BoxScope.BoardGrid(
+  ranks: List<ChessRank>,
+  files: List<ChessFile>,
+  squareContent: @Composable BoxScope.(Square) -> Unit,
+) {
+  Column(modifier = Modifier.matchParentSize()) {
+    ranks.forEach { rank ->
+      Row(modifier = Modifier.fillMaxWidth().weight(EqualBoardSegmentWeight)) {
+        files.forEach { file ->
+          Box(modifier = Modifier.fillMaxHeight().weight(EqualBoardSegmentWeight)) {
+            squareContent(Square(file, rank))
+          }
+        }
+      }
+    }
+  }
+}
+
+@Composable
+private fun BoxScope.BoardPieces(
+  position: ChessPosition,
+  animation: PieceAnimation,
+  ranks: List<ChessRank>,
+  files: List<ChessFile>,
+  squareSize: Dp,
+  isUpsideDown: (ChessPiece) -> Boolean,
+) {
+  Box(modifier = Modifier.matchParentSize()) {
+    animation.transition.vanishedPieces.forEach { (square, piece) ->
+      key(square) {
+        Box(
+          modifier =
+            Modifier
+              .size(squareSize)
+              .offset { square.boardOffset(ranks, files, squareSize.toPx()) }
+              .graphicsLayer { alpha = AnimationEnd - animation.progress.value },
+        ) {
+          PieceImage(piece, isUpsideDown(piece))
+        }
+      }
+    }
+
+    ranks.forEach { rank ->
+      files.forEach { file ->
+        val square = Square(file, rank)
+        val piece = position[square]
+        if (piece != null) {
+          key(square) {
+            val origin = animation.transition.movements[square]
             Box(
               modifier =
                 Modifier
-                  .fillMaxHeight()
-                  .weight(EqualBoardSegmentWeight)
-                  .background(squareColor)
-                  .selectable(
-                    selected = isSelected,
-                    interactionSource = null,
-                    indication = null,
-                    onClick = { onSquareClick(square) },
-                  ),
-              contentAlignment = Alignment.Center,
+                  .size(squareSize)
+                  .zIndex(if (origin != null) MovingPieceZIndex else StationaryPieceZIndex)
+                  .offset {
+                    val squarePx = squareSize.toPx()
+                    val target = square.boardOffset(ranks, files, squarePx)
+                    if (origin == null) {
+                      target
+                    } else {
+                      lerp(origin.boardOffset(ranks, files, squarePx), target, animation.progress.value)
+                    }
+                  },
             ) {
-              if (piece != null) PieceImage(piece, isUpsideDown = facing.isUpsideDown(piece.color, perspective))
-
-              BoardSquareCoordinates(
-                facing = facing,
-                bottomPlayerRank = rank.takeIf { file == leftFile },
-                bottomPlayerFile = file.takeIf { rank == bottomRank },
-                topPlayerRank = rank.takeIf { file == rightFile },
-                topPlayerFile = file.takeIf { rank == topRank },
-                color = square.color.toCoordinateColor(colors),
-              )
-
-              if (square == promotionSquare) {
-                PromotionMenu(
-                  color = state.position.sideToMove,
-                  isUpsideDown = facing.isUpsideDown(state.position.sideToMove, perspective),
-                  onPieceSelect = onPromotionSelect,
-                  onDismiss = onPromotionDismiss,
-                )
-              }
+              PieceImage(piece, isUpsideDown(piece))
             }
           }
         }
@@ -146,6 +243,30 @@ fun ChessBoard(
     }
   }
 }
+
+@Stable
+private class PieceAnimation(val transition: PieceTransition) {
+  val progress =
+    Animatable(
+      if (transition.movements.isEmpty() && transition.vanishedPieces.isEmpty()) AnimationEnd else AnimationStart,
+    )
+}
+
+@Composable
+private fun rememberPieceAnimation(position: ChessPosition): PieceAnimation {
+  var previousPosition by remember { mutableStateOf(position) }
+  val animation = remember(position) { PieceAnimation(pieceTransition(previousPosition, position)) }
+  SideEffect { previousPosition = position }
+  LaunchedEffect(animation) {
+    animation.progress.animateTo(AnimationEnd, tween(PieceMoveDurationMillis, easing = FastOutSlowInEasing))
+  }
+  return animation
+}
+
+private fun Square.boardOffset(ranks: List<ChessRank>, files: List<ChessFile>, squarePx: Float): IntOffset = IntOffset(
+  x = (files.indexOf(file) * squarePx).roundToInt(),
+  y = (ranks.indexOf(rank) * squarePx).roundToInt(),
+)
 
 @Composable
 private fun PromotionMenu(
@@ -251,7 +372,7 @@ private fun BoardFacing.isUpsideDown(color: PieceColor, perspective: PieceColor)
   BoardFacing.FACE_TO_FACE -> color != perspective
 }
 
-private fun PromotionPiece.toPieceType(): PieceType = when (this) {
+internal fun PromotionPiece.toPieceType(): PieceType = when (this) {
   PromotionPiece.QUEEN -> PieceType.QUEEN
   PromotionPiece.ROOK -> PieceType.ROOK
   PromotionPiece.BISHOP -> PieceType.BISHOP
