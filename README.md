@@ -4,6 +4,10 @@
 
 **ChiChess** (Chi[rkin]Chess) — a simple Android chess app.
 
+## Demo
+
+<img src="attachments/over-the-board-demo.gif" alt="Over-the-board game demo" width="200">
+
 ## Features
 
 - **Offline play** — a local chess game against another player.
