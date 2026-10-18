@@ -15,7 +15,7 @@ import androidx.navigation3.runtime.result.ResultEffect
 import androidx.navigation3.runtime.result.rememberResultEventBusNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.github.chirillkirkin.chichess.core.designsystem.theme.ChiChessTheme
-import com.github.chirillkirkin.chichess.feature.game.offline.OfflineGameRoot
+import com.github.chirillkirkin.chichess.feature.game.offline.presentation.OfflineGameRoot
 import com.github.chirillkirkin.chichess.feature.game.online.presentation.game.OnlineGameRoot
 import com.github.chirillkirkin.chichess.feature.game.online.presentation.lobby.LobbyError
 import com.github.chirillkirkin.chichess.feature.game.online.presentation.lobby.OnlineLobbyMessage

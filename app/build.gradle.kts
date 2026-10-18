@@ -61,12 +61,15 @@ dependencies {
   implementation(project(":core:domain"))
   implementation(project(":core:data"))
   implementation(project(":core:data:network"))
+  implementation(project(":core:data:database"))
   implementation(project(":mvu:core"))
 
   // Feature modules
   implementation(project(":feature:game:domain"))
   implementation(project(":feature:game:engine"))
-  implementation(project(":feature:game:offline"))
+  implementation(project(":feature:game:offline:domain"))
+  implementation(project(":feature:game:offline:data"))
+  implementation(project(":feature:game:offline:presentation"))
   implementation(project(":feature:game:online:domain"))
   implementation(project(":feature:game:online:data"))
   implementation(project(":feature:game:online:presentation"))

@@ -15,6 +15,7 @@ javaxInject = "1"
 ktor = "3.6.0"
 kotlinxSerialization = "1.11.0"
 androidxDatastore = "1.2.1"
+room3 = "3.0.3"
 timber = "5.0.1"
 detekt = "2.0.0-alpha.6"
 composeRules = "0.6.7"
@@ -45,6 +46,8 @@ javax-inject = { module = "javax.inject:javax.inject", version.ref = "javaxInjec
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "androidxDatastore" }
+androidx-room3-runtime = { module = "androidx.room3:room3-runtime", version.ref = "room3" }
+androidx-room3-compiler = { module = "androidx.room3:room3-compiler", version.ref = "room3" }
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
@@ -69,4 +72,5 @@ parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 dagger-hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+androidx-room3 = { id = "androidx.room3", version.ref = "room3" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }

@@ -1,5 +1,7 @@
 plugins {
   alias(libs.plugins.android.library)
+  alias(libs.plugins.ksp)
+  alias(libs.plugins.androidx.room3)
 }
 
 android {
@@ -18,4 +20,13 @@ android {
 
 kotlin {
   jvmToolchain(17)
+}
+
+room3 {
+  schemaDirectory("$projectDir/schemas")
+}
+
+dependencies {
+  api(libs.androidx.room3.runtime)
+  ksp(libs.androidx.room3.compiler)
 }

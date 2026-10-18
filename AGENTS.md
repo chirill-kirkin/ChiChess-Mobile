@@ -28,7 +28,9 @@
 :feature:game:domain
 :feature:game:engine
 :feature:game:board
-:feature:game:offline
+:feature:game:offline:domain
+:feature:game:offline:data
+:feature:game:offline:presentation
 ```
 
 The active game dependency graph is:
@@ -37,13 +39,17 @@ The active game dependency graph is:
 :app
   -> :core:designsystem
   -> :feature:home:presentation
+  -> :core:data:database
   -> :feature:game:domain
   -> :feature:game:engine
-  -> :feature:game:offline
+  -> :feature:game:offline:domain
+  -> :feature:game:offline:data
+  -> :feature:game:offline:presentation
 
-:feature:game:offline
+:feature:game:offline:presentation
   -> :feature:game:board
   -> :feature:game:domain
+  -> :feature:game:offline:domain
   -> :core:designsystem
 
 :feature:game:board
@@ -51,6 +57,14 @@ The active game dependency graph is:
   -> :core:designsystem
 
 :feature:game:engine
+  -> :feature:game:domain
+
+:feature:game:offline:data
+  -> :feature:game:domain
+  -> :feature:game:offline:domain
+  -> :core:data:database
+
+:feature:game:offline:domain
   -> :feature:game:domain
 ```
 
@@ -63,8 +77,10 @@ The active game dependency graph is:
 - `:feature:game:domain` contains shared chess models and engine contracts and must remain independent of Android, Compose, presentation, and data modules.
 - `:feature:game:engine` adapts chesslib to the project's domain models. Chesslib types must not cross this module boundary.
 - `:feature:game:board` contains the reusable stateless Compose board, board UI state, coordinates, rendering, and square selection.
-- `:feature:game:offline` contains the offline screen, MVU/ViewModel orchestration, and local-game behavior.
-- Offline depends on the shared game domain and board, not the chesslib implementation; `:app` binds the engine contract to the implementation. The offline unit tests may depend on `:feature:game:engine` directly.
+- `:feature:game:offline:domain` contains offline-game concepts and the offline-game persistence contract; it must remain independent of Android.
+- `:feature:game:offline:data` implements the offline-game persistence contract on top of `:core:data:database`. Room types must not cross this module boundary.
+- `:feature:game:offline:presentation` contains the offline screen, MVU/ViewModel orchestration, and local-game behavior.
+- Offline depends on the shared game domain and board, not the chesslib implementation; `:app` binds the engine and repository contracts to their implementations. The offline unit tests may depend on `:feature:game:engine` directly.
 - Unrelated feature modules do not depend on each other. Move code to a core module only when multiple features genuinely share it.
 
 ## Domain and UI rules
