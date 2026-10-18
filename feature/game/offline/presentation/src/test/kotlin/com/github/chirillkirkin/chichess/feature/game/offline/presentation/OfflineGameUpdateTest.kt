@@ -111,6 +111,58 @@ class OfflineGameUpdateTest {
   }
 
   @Test
+  fun `drag start selects the piece with its legal targets and keeps it selected`() {
+    val origin = Square(ChessFile.E, ChessRank.TWO)
+
+    val draggedState = OfflineGameState().reduceDragStart(origin)
+    val draggedAgainState = draggedState.reduceDragStart(origin)
+
+    assertEquals(origin, draggedState.board.selectedSquare)
+    assertEquals(
+      setOf(Square(ChessFile.E, ChessRank.THREE), Square(ChessFile.E, ChessRank.FOUR)),
+      draggedState.board.legalTargets,
+    )
+    assertEquals(draggedState, draggedAgainState)
+  }
+
+  @Test
+  fun `legal drop moves the dragged piece and appends the move`() {
+    val origin = Square(ChessFile.G, ChessRank.ONE)
+    val destination = Square(ChessFile.F, ChessRank.THREE)
+    val draggedState = OfflineGameState().reduceDragStart(origin)
+
+    val result = update(drop(origin, destination), draggedState)
+
+    assertNull(result.state.board.position[origin])
+    assertEquals(draggedState.board.position[origin], result.state.board.position[destination])
+    assertNull(result.state.board.selectedSquare)
+    assertEquals(emptySet(), result.state.board.legalTargets)
+    assertEquals(listOf(OfflineGameCommand.AppendMove(0, ChessMove(origin, destination))), result.commands)
+  }
+
+  @Test
+  fun `illegal drop keeps the position and clears the selection`() {
+    val origin = Square(ChessFile.E, ChessRank.TWO)
+    val initialState = OfflineGameState()
+    val draggedState = initialState.reduceDragStart(origin)
+
+    val result = update(drop(origin, Square(ChessFile.E, ChessRank.FIVE)), draggedState)
+
+    assertEquals(initialState, result.state)
+    assertEquals(emptyList(), result.commands)
+  }
+
+  @Test
+  fun `drop on the promotion square waits for a choice`() {
+    val draggedState = promotionState().reduceDragStart(promotionFrom)
+
+    val pendingState = draggedState.reduceMessage(drop(promotionFrom, promotionTo))
+
+    assertEquals(ChessMove(promotionFrom, promotionTo), pendingState.pendingPromotion)
+    assertEquals(draggedState.board, pendingState.board)
+  }
+
+  @Test
   fun `promotion waits for a choice and dismissal leaves the selected pawn in place`() {
     val selectedState = promotionState().reduceBoardClick(promotionFrom)
 
@@ -160,6 +212,10 @@ class OfflineGameUpdateTest {
     assertEquals(
       finishedState,
       finishedState.reduceBoardClick(Square(ChessFile.E, ChessRank.ONE)),
+    )
+    assertEquals(
+      finishedState,
+      finishedState.reduceDragStart(Square(ChessFile.E, ChessRank.ONE)),
     )
   }
 
@@ -379,6 +435,9 @@ class OfflineGameUpdateTest {
   private fun boardClick(square: Square): OfflineGameMessage =
     OfflineGameMessage.Board(BoardMessage.SquareClick(square))
 
+  private fun drop(from: Square, to: Square): OfflineGameMessage =
+    OfflineGameMessage.Board(BoardMessage.PieceDrop(from, to))
+
   private fun promotionState(): OfflineGameState = OfflineGameState(
     board =
       BoardState(
@@ -409,6 +468,9 @@ class OfflineGameUpdateTest {
     OfflineGameMessage.Board(BoardMessage.SquareClick(square)),
     this,
   ).state
+
+  private fun OfflineGameState.reduceDragStart(square: Square): OfflineGameState =
+    reduceMessage(OfflineGameMessage.Board(BoardMessage.PieceDragStart(square)))
 
   private companion object {
     const val PromotionPositionFenValue = "7k/P7/8/8/8/8/8/7K w - - 0 1"

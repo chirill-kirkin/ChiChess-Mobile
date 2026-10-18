@@ -29,7 +29,7 @@ internal fun onlineGameUpdate(
   when (message) {
     is OnlineGameMessage.Event -> onEvent(message.event, state, gameEngine, newCommandId)
 
-    is OnlineGameMessage.Board -> onBoardClick(message.message, state, gameEngine, newCommandId)
+    is OnlineGameMessage.Board -> onBoardMessage(message.message, state, gameEngine, newCommandId)
 
     is OnlineGameMessage.PromotionSelected -> onPromotionSelected(message.piece, state, gameEngine, newCommandId)
 
@@ -120,7 +120,7 @@ private fun reconnectDelay(attempt: Int): Duration {
   return delay
 }
 
-private fun UpdateDsl<OnlineGameState, OnlineGameCommand>.onBoardClick(
+private fun UpdateDsl<OnlineGameState, OnlineGameCommand>.onBoardMessage(
   message: BoardMessage,
   state: OnlineGameState,
   engine: ChessGameEngine,
@@ -141,6 +141,15 @@ private fun UpdateDsl<OnlineGameState, OnlineGameCommand>.onBoardClick(
         applyOptimisticMove(state, ChessMove(from = selected, to = message.square), engine, newCommandId)
       }
     }
+
+    is BoardMessage.PieceDragStart -> state(state.copy(board = board.select(message, engine)))
+
+    is BoardMessage.PieceDrop ->
+      if (message.to in board.legalTargets) {
+        applyOptimisticMove(state, ChessMove(from = message.from, to = message.to), engine, newCommandId)
+      } else {
+        state(state.copy(board = board.select(message, engine)))
+      }
   }
 }
 
@@ -246,7 +255,7 @@ private fun OnlineGameState.withoutPendingMove(engine: ChessGameEngine): OnlineG
   pendingPromotion = null,
 )
 
-private fun BoardState.select(message: BoardMessage.SquareClick, engine: ChessGameEngine): BoardState {
+private fun BoardState.select(message: BoardMessage, engine: ChessGameEngine): BoardState {
   val updated = boardUpdate(message, this)
   val legalTargets: Set<Square> =
     updated.selectedSquare

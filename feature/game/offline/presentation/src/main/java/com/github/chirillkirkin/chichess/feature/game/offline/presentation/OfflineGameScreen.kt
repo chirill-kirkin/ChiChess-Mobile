@@ -153,6 +153,12 @@ private fun OfflineGameContent(
         onSquareClick = { square ->
           onMessage(OfflineGameMessage.Board(BoardMessage.SquareClick(square)))
         },
+        onPieceDragStart = { square ->
+          onMessage(OfflineGameMessage.Board(BoardMessage.PieceDragStart(square)))
+        },
+        onPieceDrop = { from, to ->
+          onMessage(OfflineGameMessage.Board(BoardMessage.PieceDrop(from, to)))
+        },
         modifier = Modifier.size(boardSize),
         facing = state.boardFacing(),
         promotionSquare = state.pendingPromotion?.to,

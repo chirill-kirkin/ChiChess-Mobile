@@ -83,6 +83,30 @@ class PieceTransitionTest {
     assertEquals(PieceTransition(mapOf(E2 to E4, G1 to F3), emptyMap()), pieceTransition(previous, initial))
   }
 
+  @Test
+  fun `dropped king leaves only the castling rook animated`() {
+    val transition = castlingTransition()
+
+    assertEquals(PieceTransition(mapOf(F1 to H1), emptyMap()), transition.withoutMovement(E1, G1))
+  }
+
+  @Test
+  fun `dropped capturing piece keeps the captured piece vanishing`() {
+    val transition = pieceTransition(position(E4 to WhitePawn, D5 to BlackPawn), position(D5 to WhitePawn))
+
+    assertEquals(PieceTransition(emptyMap(), mapOf(D5 to BlackPawn)), transition.withoutMovement(E4, D5))
+  }
+
+  @Test
+  fun `drop from another origin keeps every movement`() {
+    val transition = castlingTransition()
+
+    assertEquals(transition, transition.withoutMovement(E2, G1))
+  }
+
+  private fun castlingTransition(): PieceTransition =
+    pieceTransition(position(E1 to WhiteKing, H1 to WhiteRook), position(G1 to WhiteKing, F1 to WhiteRook))
+
   private fun position(vararg pieces: Pair<Square, ChessPiece>): ChessPosition =
     ChessPosition.fromSnapshot(fen = Fen(""), pieces = pieces.toMap(), sideToMove = PieceColor.WHITE)
 

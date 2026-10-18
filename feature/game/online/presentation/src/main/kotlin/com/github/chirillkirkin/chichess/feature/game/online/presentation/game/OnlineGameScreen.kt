@@ -118,6 +118,8 @@ fun OnlineGameScreen(state: OnlineGameState, onMessage: (OnlineGameMessage) -> U
         ChessBoard(
           state = board,
           onSquareClick = { onMessage(OnlineGameMessage.Board(BoardMessage.SquareClick(it))) },
+          onPieceDragStart = { onMessage(OnlineGameMessage.Board(BoardMessage.PieceDragStart(it))) },
+          onPieceDrop = { from, to -> onMessage(OnlineGameMessage.Board(BoardMessage.PieceDrop(from, to))) },
           perspective = state.yourColor ?: PieceColor.WHITE,
           promotionSquare = state.pendingPromotion?.to,
           onPromotionSelect = { onMessage(OnlineGameMessage.PromotionSelected(it)) },

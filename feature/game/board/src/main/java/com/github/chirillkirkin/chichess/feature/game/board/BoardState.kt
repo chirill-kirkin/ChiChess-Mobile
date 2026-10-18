@@ -12,6 +12,10 @@ data class BoardState(
 
 sealed interface BoardMessage {
   data class SquareClick(val square: Square) : BoardMessage
+
+  data class PieceDragStart(val square: Square) : BoardMessage
+
+  data class PieceDrop(val from: Square, val to: Square) : BoardMessage
 }
 
 fun boardUpdate(message: BoardMessage, state: BoardState): BoardState = when (message) {
@@ -27,4 +31,13 @@ fun boardUpdate(message: BoardMessage, state: BoardState): BoardState = when (me
       else -> state
     }
   }
+
+  is BoardMessage.PieceDragStart ->
+    if (state.position[message.square]?.color == state.position.sideToMove) {
+      state.copy(selectedSquare = message.square)
+    } else {
+      state
+    }
+
+  is BoardMessage.PieceDrop -> state.copy(selectedSquare = null)
 }

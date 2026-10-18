@@ -41,6 +41,9 @@ internal fun pieceTransition(previous: ChessPosition, current: ChessPosition): P
   )
 }
 
+internal fun PieceTransition.withoutMovement(origin: Square, destination: Square): PieceTransition =
+  if (movements[destination] == origin) copy(movements = movements - destination) else this
+
 private fun ChessPiece.promotedPawn(): ChessPiece? = takeIf { type in promotionPieceTypes }?.copy(type = PieceType.PAWN)
 
 private fun Square.distanceTo(other: Square): Int {

@@ -83,6 +83,36 @@ class OnlineGameUpdateTest {
   }
 
   @Test
+  fun `dragging a piece shows its legal targets`() {
+    val state = update(dragStart(e2), connected()).state
+
+    assertEquals(e2, state.board?.selectedSquare)
+    assertEquals(state.board?.legalTargets?.containsAll(setOf(e3, e4)), true)
+  }
+
+  @Test
+  fun `a legal drop is applied optimistically and sends the move`() {
+    val afterDragStart = update(dragStart(e2), connected()).state
+
+    val result = update(drop(e2, e4), afterDragStart)
+
+    assertEquals(ChessMove(e2, e4), result.state.pendingMove?.move)
+    assertNull(result.state.board?.selectedSquare)
+    assertTrue(OnlineGameCommand.SendMove(FIRST_COMMAND_ID, REVISION, ChessMove(e2, e4)) in result.commands)
+  }
+
+  @Test
+  fun `an illegal drop clears the selection without sending a move`() {
+    val connected = connected()
+    val afterDragStart = update(dragStart(e2), connected).state
+
+    val result = update(drop(e2, Square(ChessFile.E, ChessRank.FIVE)), afterDragStart)
+
+    assertEquals(connected, result.state)
+    assertTrue(result.commands.isEmpty())
+  }
+
+  @Test
   fun `move applied confirms the pending move`() {
     val pending = movedOptimistically()
 
@@ -364,6 +394,10 @@ class OnlineGameUpdateTest {
   }
 
   private fun click(square: Square) = OnlineGameMessage.Board(BoardMessage.SquareClick(square))
+
+  private fun dragStart(square: Square) = OnlineGameMessage.Board(BoardMessage.PieceDragStart(square))
+
+  private fun drop(from: Square, to: Square) = OnlineGameMessage.Board(BoardMessage.PieceDrop(from, to))
 
   private fun closed(permanent: Boolean) = OnlineGameMessage.Event(OnlineGameEvent.Closed(permanent))
 

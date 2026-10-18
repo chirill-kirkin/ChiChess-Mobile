@@ -145,6 +145,15 @@ private fun OfflineGameState.updateBoard(message: BoardMessage, gameEngine: Ches
         applyMove(ChessMove(from = selectedSquare, to = message.square), gameEngine)
       }
     }
+
+    is BoardMessage.PieceDragStart -> selectSquare(message, gameEngine)
+
+    is BoardMessage.PieceDrop ->
+      if (message.to in board.legalTargets) {
+        applyMove(ChessMove(from = message.from, to = message.to), gameEngine)
+      } else {
+        selectSquare(message, gameEngine)
+      }
   }
 
 private fun OfflineGameState.applyMove(move: ChessMove, gameEngine: ChessGameEngine): OfflineGameState =
@@ -174,10 +183,7 @@ private fun OfflineGameState.applyMove(move: ChessMove, gameEngine: ChessGameEng
       }
   }
 
-private fun OfflineGameState.selectSquare(
-  message: BoardMessage.SquareClick,
-  gameEngine: ChessGameEngine,
-): OfflineGameState {
+private fun OfflineGameState.selectSquare(message: BoardMessage, gameEngine: ChessGameEngine): OfflineGameState {
   val updatedBoard = boardUpdate(message, board)
   val legalTargets =
     updatedBoard.selectedSquare
