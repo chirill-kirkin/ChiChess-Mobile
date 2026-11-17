@@ -1,0 +1,6 @@
+<resources>
+    <string name="time_control_with_clock">With clock</string>
+    <string name="time_control_minutes">Minutes per side</string>
+    <string name="time_control_increment">Increment, seconds</string>
+    <string name="time_control_preset" translatable="false">%1$d + %2$d</string>
+</resources>

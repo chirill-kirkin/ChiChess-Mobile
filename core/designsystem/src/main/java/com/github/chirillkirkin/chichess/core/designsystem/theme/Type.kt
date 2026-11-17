@@ -12,6 +12,7 @@ data class ChiChessTypography(
   val screenTitle: TextStyle,
   val gameResult: TextStyle,
   val settingsSectionTitle: TextStyle,
+  val clock: TextStyle,
 )
 
 internal val DefaultChiChessTypography =
@@ -20,4 +21,8 @@ internal val DefaultChiChessTypography =
     screenTitle = Typography.bodyLarge,
     gameResult = Typography.titleMedium,
     settingsSectionTitle = Typography.titleSmall,
+    clock = Typography.headlineMedium.copy(fontFeatureSettings = TabularNumbersFeature),
   )
+
+// Keeps every digit the same width so a ticking clock does not jitter.
+private const val TabularNumbersFeature = "tnum"

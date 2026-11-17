@@ -22,6 +22,7 @@
 - `:feature:game:domain` contains shared chess models and engine contracts and must remain independent of Android, Compose, presentation, and data modules.
 - `:feature:game:engine` adapts chesslib to the project's domain models. Chesslib types must not cross this module boundary.
 - `:feature:game:board` contains the reusable stateless Compose board, board UI state, coordinates, rendering, and square selection.
+- `:feature:game:clock` contains the reusable Compose chess clock face, its display ticker, and the time-control picker. Clock rules and `TimeControl` live in `:feature:game:domain`.
 - `:feature:game:offline:domain` contains offline-game concepts and the offline-game persistence contract; it must remain independent of Android.
 - `:feature:game:offline:data` implements the offline-game persistence contract on top of `:core:data:database`. Room types must not cross this module boundary.
 - `:feature:game:offline:presentation` contains the offline screen, MVU/ViewModel orchestration, and local-game behavior.

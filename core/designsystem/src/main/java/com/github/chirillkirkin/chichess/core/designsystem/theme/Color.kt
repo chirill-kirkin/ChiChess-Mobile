@@ -19,6 +19,12 @@ data class ChiChessColors(
   val boardLegalTargetOverlay: Color,
   val boardCheckedKingOverlay: Color,
   val boardDragTargetOverlay: Color,
+  val clockIdleBackground: Color,
+  val clockIdleContent: Color,
+  val clockRunningBackground: Color,
+  val clockRunningContent: Color,
+  val clockLowTimeBackground: Color,
+  val clockLowTimeContent: Color,
 )
 
 internal val DefaultChiChessColors =
@@ -29,4 +35,10 @@ internal val DefaultChiChessColors =
     boardLegalTargetOverlay = Color(0x663A7D44),
     boardCheckedKingOverlay = Color(0xB3D32F2F),
     boardDragTargetOverlay = Color(0x40000000),
+    clockIdleBackground = Color(0xFFE0E0E0),
+    clockIdleContent = Color(0xFF616161),
+    clockRunningBackground = Color(0xFF212121),
+    clockRunningContent = Color(0xFFFFFFFF),
+    clockLowTimeBackground = Color(0xFFC62828),
+    clockLowTimeContent = Color(0xFFFFFFFF),
   )

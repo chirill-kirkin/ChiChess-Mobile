@@ -1,0 +1,5 @@
+<resources>
+    <string name="time_control_with_clock">С часами</string>
+    <string name="time_control_minutes">Минуты на партию</string>
+    <string name="time_control_increment">Добавление, сек</string>
+</resources>
