@@ -1,14 +1,10 @@
 package com.github.chirillkirkin.chichess.feature.game.board
 
-import com.github.chirillkirkin.chichess.feature.game.domain.ChessFile
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessPiece
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessPosition
-import com.github.chirillkirkin.chichess.feature.game.domain.ChessRank
 import com.github.chirillkirkin.chichess.feature.game.domain.PieceType
 import com.github.chirillkirkin.chichess.feature.game.domain.PromotionPiece
 import com.github.chirillkirkin.chichess.feature.game.domain.Square
-
-private val boardSquares = ChessRank.entries.flatMap { rank -> ChessFile.entries.map { file -> Square(file, rank) } }
 
 private val promotionPieceTypes = PromotionPiece.entries.map { it.toPieceType() }.toSet()
 
@@ -19,8 +15,8 @@ internal data class PieceTransition(
 )
 
 internal fun pieceTransition(previous: ChessPosition, current: ChessPosition): PieceTransition {
-  val departures = boardSquares.filter { previous[it] != null && previous[it] != current[it] }.toMutableList()
-  val arrivals = boardSquares.filter { current[it] != null && current[it] != previous[it] }
+  val departures = Square.entries.filter { previous[it] != null && previous[it] != current[it] }.toMutableList()
+  val arrivals = Square.entries.filter { current[it] != null && current[it] != previous[it] }
   val movements = mutableMapOf<Square, Square>()
 
   fun match(arrival: Square, origin: ChessPiece) {
