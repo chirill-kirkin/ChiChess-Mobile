@@ -223,6 +223,15 @@ private fun gameResultText(status: GameStatus): String? = when (status) {
         DrawReason.FIVEFOLD_REPETITION -> R.string.draw_by_fivefold_repetition
         DrawReason.SEVENTY_FIVE_MOVE_RULE -> R.string.draw_by_seventy_five_move_rule
         DrawReason.INSUFFICIENT_MATERIAL -> R.string.draw_by_insufficient_material
+        DrawReason.TIMEOUT_VS_INSUFFICIENT_MATERIAL -> R.string.draw_by_timeout_vs_insufficient_material
+      },
+    )
+
+  is GameStatus.Timeout ->
+    stringResource(
+      when (status.winner) {
+        PieceColor.WHITE -> R.string.white_wins_on_time
+        PieceColor.BLACK -> R.string.black_wins_on_time
       },
     )
 }

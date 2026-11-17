@@ -20,6 +20,8 @@ sealed interface GameStatus {
   data class Checkmate(val winner: PieceColor) : GameStatus
 
   data class Draw(val reason: DrawReason) : GameStatus
+
+  data class Timeout(val winner: PieceColor) : GameStatus
 }
 
 enum class DrawReason {
@@ -29,6 +31,7 @@ enum class DrawReason {
   FIVEFOLD_REPETITION,
   SEVENTY_FIVE_MOVE_RULE,
   INSUFFICIENT_MATERIAL,
+  TIMEOUT_VS_INSUFFICIENT_MATERIAL,
 }
 
 enum class MoveRejectionReason {

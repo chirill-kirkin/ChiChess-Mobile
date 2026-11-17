@@ -7,6 +7,9 @@
     <string name="draw_by_fivefold_repetition">Draw by fivefold repetition</string>
     <string name="draw_by_seventy_five_move_rule">Draw by the seventy-five-move rule</string>
     <string name="draw_by_insufficient_material">Draw by insufficient material</string>
+    <string name="white_wins_on_time">White wins on time</string>
+    <string name="black_wins_on_time">Black wins on time</string>
+    <string name="draw_by_timeout_vs_insufficient_material">Draw: time ran out, but the opponent cannot checkmate</string>
     <string name="claim_draw">Claim draw</string>
     <string name="over_the_board">Over the board</string>
     <string name="navigate_back">Back</string>
