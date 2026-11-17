@@ -21,6 +21,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TestTimeSource
 
 private const val GAME_ID = "game-1"
 private const val INVITE_CODE = "INV0000000"
@@ -39,7 +40,7 @@ private val e4 = Square(ChessFile.E, ChessRank.FOUR)
 class OnlineGameUpdateTest {
   private val engine = ChesslibGameEngine()
   private var commandCounter = 0
-  private val update = onlineGameUpdate(engine) { "cmd-${++commandCounter}" }
+  private val update = onlineGameUpdate(engine, TestTimeSource()) { "cmd-${++commandCounter}" }
 
   @Test
   fun `snapshot connects and renders the board`() {

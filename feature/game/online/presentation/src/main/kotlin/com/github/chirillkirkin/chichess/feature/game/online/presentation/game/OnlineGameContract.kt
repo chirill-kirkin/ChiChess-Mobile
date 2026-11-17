@@ -2,10 +2,12 @@ package com.github.chirillkirkin.chichess.feature.game.online.presentation.game
 
 import com.github.chirillkirkin.chichess.feature.game.board.BoardMessage
 import com.github.chirillkirkin.chichess.feature.game.board.BoardState
+import com.github.chirillkirkin.chichess.feature.game.domain.ChessClock
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessMove
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessPosition
 import com.github.chirillkirkin.chichess.feature.game.domain.PieceColor
 import com.github.chirillkirkin.chichess.feature.game.domain.PromotionPiece
+import com.github.chirillkirkin.chichess.feature.game.domain.TimeControl
 import com.github.chirillkirkin.chichess.feature.game.online.domain.CommandRejection
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameEvent
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameResult
@@ -38,6 +40,10 @@ data class OnlineGameState(
   val pendingPromotion: ChessMove? = null,
   val moveError: CommandRejection? = null,
   val reconnectAttempt: Int = 0,
+  val timeControl: TimeControl? = null,
+  // The last server-confirmed clock; the shown clock may already count an optimistic move.
+  val confirmedClock: ChessClock? = null,
+  val clock: ChessClock? = null,
 )
 
 sealed interface OnlineGameMessage {
@@ -64,6 +70,8 @@ sealed interface OnlineGameMessage {
   data object AppForegrounded : OnlineGameMessage
 
   data object AppBackgrounded : OnlineGameMessage
+
+  data object ClockExpired : OnlineGameMessage
 }
 
 sealed interface OnlineGameCommand {

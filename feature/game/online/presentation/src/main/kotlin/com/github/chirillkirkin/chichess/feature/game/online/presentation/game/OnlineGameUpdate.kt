@@ -3,6 +3,7 @@ package com.github.chirillkirkin.chichess.feature.game.online.presentation.game
 import com.github.chirillkirkin.chichess.feature.game.board.BoardMessage
 import com.github.chirillkirkin.chichess.feature.game.board.BoardState
 import com.github.chirillkirkin.chichess.feature.game.board.boardUpdate
+import com.github.chirillkirkin.chichess.feature.game.domain.ChessClock
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessGameEngine
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessMove
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessPosition
@@ -10,28 +11,35 @@ import com.github.chirillkirkin.chichess.feature.game.domain.MoveApplicationResu
 import com.github.chirillkirkin.chichess.feature.game.domain.MoveRejectionReason
 import com.github.chirillkirkin.chichess.feature.game.domain.PromotionPiece
 import com.github.chirillkirkin.chichess.feature.game.domain.Square
+import com.github.chirillkirkin.chichess.feature.game.domain.TimeControl
+import com.github.chirillkirkin.chichess.feature.game.online.domain.ClockReading
 import com.github.chirillkirkin.chichess.feature.game.online.domain.CommandRejection
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameEvent
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameStatus
 import com.github.chirillkirkin.mvu.Update
 import com.github.chirillkirkin.mvu.UpdateDsl
 import com.github.chirillkirkin.mvu.update
+import kotlin.time.ComparableTimeMark
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 
 private val InitialReconnectDelay = 1.seconds
 private val MaxReconnectDelay = 30.seconds
 
 internal fun onlineGameUpdate(
   gameEngine: ChessGameEngine,
+  timeSource: TimeSource.WithComparableMarks,
   newCommandId: () -> String,
 ): Update<OnlineGameMessage, OnlineGameState, OnlineGameCommand> = update { message, state ->
+  val now = timeSource.markNow()
   when (message) {
-    is OnlineGameMessage.Event -> onEvent(message.event, state, gameEngine, newCommandId)
+    is OnlineGameMessage.Event -> onEvent(message.event, state, gameEngine, now, newCommandId)
 
-    is OnlineGameMessage.Board -> onBoardMessage(message.message, state, gameEngine, newCommandId)
+    is OnlineGameMessage.Board -> onBoardMessage(message.message, state, gameEngine, now, newCommandId)
 
-    is OnlineGameMessage.PromotionSelected -> onPromotionSelected(message.piece, state, gameEngine, newCommandId)
+    is OnlineGameMessage.PromotionSelected ->
+      onPromotionSelected(message.piece, state, gameEngine, now, newCommandId)
 
     OnlineGameMessage.PromotionDismissed -> state(state.copy(pendingPromotion = null))
 
@@ -59,6 +67,12 @@ internal fun onlineGameUpdate(
       }
 
     OnlineGameMessage.AppBackgrounded -> command(OnlineGameCommand.Disconnect)
+
+    // The server flags the game; a flag it has not reported yet is pulled with a fresh snapshot.
+    OnlineGameMessage.ClockExpired ->
+      if (state.canPlay() && state.clock?.expiredSide(now) != null) {
+        command(OnlineGameCommand.RequestSync(newCommandId()))
+      }
   }
 }
 
@@ -66,14 +80,15 @@ private fun UpdateDsl<OnlineGameState, OnlineGameCommand>.onEvent(
   event: OnlineGameEvent,
   state: OnlineGameState,
   engine: ChessGameEngine,
+  now: ComparableTimeMark,
   newCommandId: () -> String,
 ) {
   when (event) {
-    is OnlineGameEvent.Snapshot -> state(state.withSnapshot(event, engine))
+    is OnlineGameEvent.Snapshot -> state(state.withSnapshot(event, engine, now))
 
-    is OnlineGameEvent.MoveApplied -> state(state.withMoveApplied(event, engine))
+    is OnlineGameEvent.MoveApplied -> state(state.withMoveApplied(event, engine, now))
 
-    is OnlineGameEvent.GameFinished -> state(state.finished(event))
+    is OnlineGameEvent.GameFinished -> state(state.finished(event, now))
 
     is OnlineGameEvent.DrawOffered -> state(state.copy(pendingDrawOfferBy = event.by))
 
@@ -124,6 +139,7 @@ private fun UpdateDsl<OnlineGameState, OnlineGameCommand>.onBoardMessage(
   message: BoardMessage,
   state: OnlineGameState,
   engine: ChessGameEngine,
+  now: ComparableTimeMark,
   newCommandId: () -> String,
 ) {
   val board = state.board
@@ -138,7 +154,7 @@ private fun UpdateDsl<OnlineGameState, OnlineGameCommand>.onBoardMessage(
       ) {
         state(state.copy(board = board.select(message, engine)))
       } else {
-        applyOptimisticMove(state, ChessMove(from = selected, to = message.square), engine, newCommandId)
+        applyOptimisticMove(state, ChessMove(from = selected, to = message.square), engine, now, newCommandId)
       }
     }
 
@@ -146,7 +162,7 @@ private fun UpdateDsl<OnlineGameState, OnlineGameCommand>.onBoardMessage(
 
     is BoardMessage.PieceDrop ->
       if (message.to in board.legalTargets) {
-        applyOptimisticMove(state, ChessMove(from = message.from, to = message.to), engine, newCommandId)
+        applyOptimisticMove(state, ChessMove(from = message.from, to = message.to), engine, now, newCommandId)
       } else {
         state(state.copy(board = board.select(message, engine)))
       }
@@ -157,16 +173,18 @@ private fun UpdateDsl<OnlineGameState, OnlineGameCommand>.onPromotionSelected(
   piece: PromotionPiece,
   state: OnlineGameState,
   engine: ChessGameEngine,
+  now: ComparableTimeMark,
   newCommandId: () -> String,
 ) {
   val move = state.pendingPromotion ?: return
-  applyOptimisticMove(state.copy(pendingPromotion = null), move.copy(promotion = piece), engine, newCommandId)
+  applyOptimisticMove(state.copy(pendingPromotion = null), move.copy(promotion = piece), engine, now, newCommandId)
 }
 
 private fun UpdateDsl<OnlineGameState, OnlineGameCommand>.applyOptimisticMove(
   state: OnlineGameState,
   move: ChessMove,
   engine: ChessGameEngine,
+  now: ComparableTimeMark,
   newCommandId: () -> String,
 ) {
   val board = state.board ?: return
@@ -176,6 +194,7 @@ private fun UpdateDsl<OnlineGameState, OnlineGameCommand>.applyOptimisticMove(
       state(
         state.copy(
           board = engine.boardOf(result.position),
+          clock = state.clock?.afterMove(board.position.sideToMove, now),
           pendingMove = PendingMove(commandId, state.revision, move),
           pendingPromotion = null,
           moveError = null,
@@ -191,9 +210,14 @@ private fun UpdateDsl<OnlineGameState, OnlineGameCommand>.applyOptimisticMove(
   }
 }
 
-private fun OnlineGameState.withSnapshot(event: OnlineGameEvent.Snapshot, engine: ChessGameEngine): OnlineGameState {
+private fun OnlineGameState.withSnapshot(
+  event: OnlineGameEvent.Snapshot,
+  engine: ChessGameEngine,
+  now: ComparableTimeMark,
+): OnlineGameState {
   val snapshot = event.snapshot
   val position = engine.positionFromFen(snapshot.fen)
+  val clock = snapshot.clock?.toChessClock(snapshot.timeControl, now)
   return copy(
     connection = ConnectionStatus.CONNECTED,
     inviteCode = snapshot.inviteCode,
@@ -211,14 +235,19 @@ private fun OnlineGameState.withSnapshot(event: OnlineGameEvent.Snapshot, engine
     pendingPromotion = null,
     moveError = null,
     reconnectAttempt = 0,
+    timeControl = snapshot.timeControl,
+    confirmedClock = clock,
+    clock = clock,
   )
 }
 
 private fun OnlineGameState.withMoveApplied(
   event: OnlineGameEvent.MoveApplied,
   engine: ChessGameEngine,
+  now: ComparableTimeMark,
 ): OnlineGameState {
   val position = engine.positionFromFen(event.fen)
+  val clock = event.clock?.toChessClock(timeControl, now)
   return copy(
     confirmedPosition = position,
     board = engine.boardOf(position),
@@ -231,17 +260,36 @@ private fun OnlineGameState.withMoveApplied(
     pendingMove = null,
     pendingPromotion = null,
     moveError = null,
+    confirmedClock = clock,
+    clock = clock,
   )
 }
 
-private fun OnlineGameState.finished(event: OnlineGameEvent.GameFinished): OnlineGameState = copy(
-  status = OnlineGameStatus.FINISHED,
-  result = event.result,
-  terminationReason = event.terminationReason,
-  revision = event.revision,
-  pendingMove = null,
-  pendingDrawOfferBy = null,
-)
+private fun OnlineGameState.finished(event: OnlineGameEvent.GameFinished, now: ComparableTimeMark): OnlineGameState {
+  val clock = event.clock?.toChessClock(timeControl, now)
+  return copy(
+    status = OnlineGameStatus.FINISHED,
+    result = event.result,
+    terminationReason = event.terminationReason,
+    revision = event.revision,
+    pendingMove = null,
+    pendingDrawOfferBy = null,
+    confirmedClock = clock,
+    clock = clock,
+  )
+}
+
+// The reading is counted from its arrival, so the shown time lags the server by the delivery delay only.
+private fun ClockReading.toChessClock(timeControl: TimeControl?, now: ComparableTimeMark): ChessClock? =
+  timeControl?.let { control ->
+    ChessClock(
+      timeControl = control,
+      whiteRemaining = whiteRemaining,
+      blackRemaining = blackRemaining,
+      activeSide = runningSide,
+      runningSince = runningSide?.let { now },
+    )
+  }
 
 private fun OnlineGameState.rolledBack(reason: CommandRejection, engine: ChessGameEngine): OnlineGameState =
   withoutPendingMove(engine).copy(
@@ -251,6 +299,7 @@ private fun OnlineGameState.rolledBack(reason: CommandRejection, engine: ChessGa
 
 private fun OnlineGameState.withoutPendingMove(engine: ChessGameEngine): OnlineGameState = copy(
   board = confirmedPosition?.let(engine::boardOf) ?: board,
+  clock = confirmedClock,
   pendingMove = null,
   pendingPromotion = null,
 )

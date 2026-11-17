@@ -2,13 +2,32 @@ package com.github.chirillkirkin.chichess.feature.game.online.data
 
 import com.github.chirillkirkin.chichess.feature.game.domain.Fen
 import com.github.chirillkirkin.chichess.feature.game.domain.PieceColor
+import com.github.chirillkirkin.chichess.feature.game.domain.TimeControl
 import com.github.chirillkirkin.chichess.feature.game.domain.parseUci
+import com.github.chirillkirkin.chichess.feature.game.online.domain.ClockReading
 import com.github.chirillkirkin.chichess.feature.game.online.domain.CreatedGame
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameResult
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameSnapshot
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameStatus
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineTerminationReason
 import kotlinx.serialization.Serializable
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+
+// A null time control creates a game without a clock.
+@Serializable
+internal data class CreateGameRequest(val timeControl: TimeControlDto?)
+
+@Serializable
+internal data class TimeControlDto(val initialSeconds: Long, val incrementSeconds: Long)
+
+// Remaining times as of the moment the server sent them, so the client counts from receipt.
+@Serializable
+internal data class ClockDto(
+  val whiteRemainingMs: Long,
+  val blackRemainingMs: Long,
+  val runningColor: ApiPieceColor? = null,
+)
 
 @Serializable
 internal data class CreateGameResponse(val gameId: String, val inviteCode: String)
@@ -31,6 +50,8 @@ internal data class GameSnapshotResponse(
   val pendingDrawOfferBy: ApiPieceColor? = null,
   val result: ApiGameResult? = null,
   val terminationReason: ApiTerminationReason? = null,
+  val timeControl: TimeControlDto? = null,
+  val clock: ClockDto? = null,
 )
 
 @Serializable
@@ -56,6 +77,8 @@ internal enum class ApiTerminationReason {
   SEVENTY_FIVE_MOVE_RULE,
   THREEFOLD_REPETITION,
   FIVEFOLD_REPETITION,
+  TIMEOUT,
+  TIMEOUT_VS_INSUFFICIENT_MATERIAL,
 }
 
 internal fun CreateGameResponse.toCreatedGame(): CreatedGame = CreatedGame(gameId = gameId, inviteCode = inviteCode)
@@ -71,6 +94,20 @@ internal fun GameSnapshotResponse.toSnapshot(): OnlineGameSnapshot = OnlineGameS
   pendingDrawOfferBy = pendingDrawOfferBy?.toPieceColor(),
   result = result?.toResult(),
   terminationReason = terminationReason?.toTerminationReason(),
+  timeControl = timeControl?.toTimeControl(),
+  clock = clock?.toClockReading(),
+)
+
+internal fun TimeControl.toDto(): TimeControlDto =
+  TimeControlDto(initialSeconds = initial.inWholeSeconds, incrementSeconds = increment.inWholeSeconds)
+
+internal fun TimeControlDto.toTimeControl(): TimeControl =
+  TimeControl(initial = initialSeconds.seconds, increment = incrementSeconds.seconds)
+
+internal fun ClockDto.toClockReading(): ClockReading = ClockReading(
+  whiteRemaining = whiteRemainingMs.milliseconds,
+  blackRemaining = blackRemainingMs.milliseconds,
+  runningSide = runningColor?.toPieceColor(),
 )
 
 internal fun ApiPieceColor.toPieceColor(): PieceColor = when (this) {
@@ -100,4 +137,6 @@ internal fun ApiTerminationReason.toTerminationReason(): OnlineTerminationReason
   ApiTerminationReason.SEVENTY_FIVE_MOVE_RULE -> OnlineTerminationReason.SEVENTY_FIVE_MOVE_RULE
   ApiTerminationReason.THREEFOLD_REPETITION -> OnlineTerminationReason.THREEFOLD_REPETITION
   ApiTerminationReason.FIVEFOLD_REPETITION -> OnlineTerminationReason.FIVEFOLD_REPETITION
+  ApiTerminationReason.TIMEOUT -> OnlineTerminationReason.TIMEOUT
+  ApiTerminationReason.TIMEOUT_VS_INSUFFICIENT_MATERIAL -> OnlineTerminationReason.TIMEOUT_VS_INSUFFICIENT_MATERIAL
 }

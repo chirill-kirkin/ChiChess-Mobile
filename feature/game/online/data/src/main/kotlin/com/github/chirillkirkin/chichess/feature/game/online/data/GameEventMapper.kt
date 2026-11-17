@@ -19,6 +19,7 @@ internal fun GameEvent.toOnlineEvent(): OnlineGameEvent = when (this) {
       lastMove = parseUci(lastMove),
       result = result?.toResult(),
       terminationReason = terminationReason?.toTerminationReason(),
+      clock = clock?.toClockReading(),
     )
 
   is GameFinishedEvent ->
@@ -26,6 +27,7 @@ internal fun GameEvent.toOnlineEvent(): OnlineGameEvent = when (this) {
       revision = revision,
       result = result.toResult(),
       terminationReason = terminationReason.toTerminationReason(),
+      clock = clock?.toClockReading(),
     )
 
   is DrawOfferedEvent -> OnlineGameEvent.DrawOffered(by.toPieceColor())

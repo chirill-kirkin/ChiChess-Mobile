@@ -1,10 +1,13 @@
 package com.github.chirillkirkin.chichess.feature.game.online.presentation.lobby
 
+import com.github.chirillkirkin.chichess.feature.game.domain.TimeControl
 import com.github.chirillkirkin.chichess.feature.game.online.domain.JoinGameResult
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 private const val INVITE_CODE = "CODE123456"
 private const val GAME_ID = "game-1"
@@ -13,11 +16,21 @@ class OnlineLobbyUpdateTest {
   private val update = onlineLobbyUpdate
 
   @Test
-  fun `create requests a game and marks busy`() {
+  fun `create requests a game with the default time control and marks busy`() {
     val result = update(OnlineLobbyMessage.CreateGame, OnlineLobbyState())
 
     assertTrue(result.state.busy)
-    assertTrue(OnlineLobbyCommand.CreateGame in result.commands)
+    assertTrue(OnlineLobbyCommand.CreateGame(TimeControl.Default) in result.commands)
+  }
+
+  @Test
+  fun `create uses the chosen time control or none`() {
+    val chosen = TimeControl(initial = 5.minutes, increment = 3.seconds)
+    val timed = update(OnlineLobbyMessage.TimeControlChanged(chosen), OnlineLobbyState()).state
+    val untimed = update(OnlineLobbyMessage.TimeControlChanged(null), timed).state
+
+    assertTrue(OnlineLobbyCommand.CreateGame(chosen) in update(OnlineLobbyMessage.CreateGame, timed).commands)
+    assertTrue(OnlineLobbyCommand.CreateGame(null) in update(OnlineLobbyMessage.CreateGame, untimed).commands)
   }
 
   @Test

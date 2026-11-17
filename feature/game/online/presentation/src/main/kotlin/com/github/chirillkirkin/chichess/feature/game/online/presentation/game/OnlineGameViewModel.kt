@@ -13,6 +13,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.map
+import kotlin.time.TimeSource
 
 @HiltViewModel(assistedFactory = OnlineGameViewModel.Factory::class)
 class OnlineGameViewModel @AssistedInject constructor(
@@ -20,6 +21,7 @@ class OnlineGameViewModel @AssistedInject constructor(
   channel: OnlineGameChannel,
   gameEngine: ChessGameEngine,
   savedStateHandle: SavedStateHandle,
+  timeSource: TimeSource.WithComparableMarks,
 ) : ViewModel(),
   MVU<OnlineGameMessage, OnlineGameState, OnlineGameCommand> by savedStateHandle.onlineGameStore(
     gameId = gameId,
@@ -29,6 +31,7 @@ class OnlineGameViewModel @AssistedInject constructor(
     appInForeground = ProcessLifecycleOwner.get().lifecycle.currentStateFlow.map {
       it.isAtLeast(Lifecycle.State.STARTED)
     },
+    timeSource = timeSource,
   ) {
   @AssistedFactory
   interface Factory {

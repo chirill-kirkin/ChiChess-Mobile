@@ -22,6 +22,9 @@
     <string name="online_draw_by_fivefold_repetition">Draw by fivefold repetition</string>
     <string name="online_draw_by_fifty_move_rule">Draw by the fifty-move rule</string>
     <string name="online_draw_by_seventy_five_move_rule">Draw by the seventy-five-move rule</string>
+    <string name="online_white_wins_on_time">White wins on time</string>
+    <string name="online_black_wins_on_time">Black wins on time</string>
+    <string name="online_draw_by_timeout_vs_insufficient_material">Draw: time ran out, but the opponent cannot checkmate</string>
 
     <string name="online_error_illegal_move">Illegal move</string>
     <string name="online_error_not_your_turn">Not your turn</string>

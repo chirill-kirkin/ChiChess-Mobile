@@ -1,7 +1,9 @@
 package com.github.chirillkirkin.chichess.feature.game.online.domain
 
+import com.github.chirillkirkin.chichess.feature.game.domain.TimeControl
+
 interface OnlineGameRepository {
-  suspend fun createGame(): CreatedGame
+  suspend fun createGame(timeControl: TimeControl?): CreatedGame
 
   suspend fun joinGame(inviteCode: String): JoinGameResult
 

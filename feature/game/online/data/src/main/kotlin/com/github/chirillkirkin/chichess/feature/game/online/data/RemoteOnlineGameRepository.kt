@@ -1,5 +1,6 @@
 package com.github.chirillkirkin.chichess.feature.game.online.data
 
+import com.github.chirillkirkin.chichess.feature.game.domain.TimeControl
 import com.github.chirillkirkin.chichess.feature.game.online.domain.CreatedGame
 import com.github.chirillkirkin.chichess.feature.game.online.domain.JoinGameResult
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameRepository
@@ -26,7 +27,12 @@ internal const val GAME_ALREADY_JOINED_CODE = "GAME_ALREADY_JOINED"
 internal const val NOT_A_GAME_PARTICIPANT_CODE = "NOT_A_GAME_PARTICIPANT"
 
 class RemoteOnlineGameRepository(private val httpClient: HttpClient) : OnlineGameRepository {
-  override suspend fun createGame(): CreatedGame = httpClient.post(GAME_PATH).body<CreateGameResponse>().toCreatedGame()
+  override suspend fun createGame(timeControl: TimeControl?): CreatedGame = httpClient
+    .post(GAME_PATH) {
+      contentType(ContentType.Application.Json)
+      setBody(CreateGameRequest(timeControl?.toDto()))
+    }.body<CreateGameResponse>()
+    .toCreatedGame()
 
   override suspend fun joinGame(inviteCode: String): JoinGameResult {
     val response = httpClient.post(GAME_JOIN_PATH) {

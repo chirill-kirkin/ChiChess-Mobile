@@ -24,6 +24,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.util.UUID
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class OnlineGameConnection(private val channel: OnlineGameChannel, private val gameId: String) {
@@ -77,25 +79,45 @@ internal fun onlineGameCommandExecutor(
   { command -> flow { connection.send(command) } } // side effect only; results arrive as events
 
 private const val ONLINE_GAME_STATE_KEY = "online_game"
+private val FlagSyncGrace = 1.seconds
 
 fun SavedStateHandle.onlineGameStore(
   gameId: String,
   connection: OnlineGameConnection,
   gameEngine: ChessGameEngine,
   appInForeground: Flow<Boolean>,
+  timeSource: TimeSource.WithComparableMarks,
   newCommandId: () -> String = { UUID.randomUUID().toString() },
 ): SavedStateMVU<OnlineGameMessage, OnlineGameState, OnlineGameCommand> = mvuStore(
   initialState = OnlineGameState(gameId = gameId),
-  update = onlineGameUpdate(gameEngine, newCommandId),
+  update = onlineGameUpdate(gameEngine, timeSource, newCommandId),
   commandExecutor = onlineGameCommandExecutor(connection),
   saveState = OnlineGameState::toSavedOnlineGame,
   restoreState = { saved, initial -> initial.restoredFrom(saved, gameEngine) },
   stateKey = ONLINE_GAME_STATE_KEY,
-  subscriptions = listOf(socketEvents(connection), appVisibility(appInForeground)),
+  subscriptions = listOf(socketEvents(connection), appVisibility(appInForeground), clockExpiry()),
 )
 
 private fun socketEvents(connection: OnlineGameConnection): Subscription<OnlineGameState, OnlineGameMessage> =
   { connection.events.map(OnlineGameMessage::Event) }
+
+// Waits a little past the shown deadline, so a flag the server reports in time needs no extra sync.
+@OptIn(ExperimentalCoroutinesApi::class)
+private fun clockExpiry(): Subscription<OnlineGameState, OnlineGameMessage> = { state ->
+  state
+    .map { it.clock?.deadline() }
+    .distinctUntilChanged()
+    .flatMapLatest { deadline ->
+      if (deadline == null) {
+        emptyFlow()
+      } else {
+        flow {
+          delay(-deadline.elapsedNow() + FlagSyncGrace)
+          emit(OnlineGameMessage.ClockExpired)
+        }
+      }
+    }
+}
 
 private fun appVisibility(appInForeground: Flow<Boolean>): Subscription<OnlineGameState, OnlineGameMessage> = {
   appInForeground.distinctUntilChanged().map { inForeground ->

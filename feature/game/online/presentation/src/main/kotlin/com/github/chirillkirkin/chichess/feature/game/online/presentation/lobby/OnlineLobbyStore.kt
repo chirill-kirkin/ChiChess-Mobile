@@ -17,10 +17,12 @@ internal val onlineLobbyUpdate: Update<OnlineLobbyMessage, OnlineLobbyState, Onl
     when (message) {
       is OnlineLobbyMessage.InviteCodeChanged -> state(state.copy(inviteCode = message.value, error = null))
 
+      is OnlineLobbyMessage.TimeControlChanged -> state(state.copy(timeControl = message.timeControl))
+
       OnlineLobbyMessage.CreateGame ->
         if (!state.busy) {
           state(state.copy(busy = true, error = null))
-          command(OnlineLobbyCommand.CreateGame)
+          command(OnlineLobbyCommand.CreateGame(state.timeControl))
         }
 
       OnlineLobbyMessage.JoinGame ->
@@ -49,8 +51,8 @@ internal fun onlineLobbyCommandExecutor(
   repository: OnlineGameRepository,
 ): CommandExecutor<OnlineLobbyCommand, OnlineLobbyMessage> = { command ->
   when (command) {
-    OnlineLobbyCommand.CreateGame ->
-      flow { emit(lobbyResult { OnlineLobbyMessage.GameReady(repository.createGame().gameId) }) }
+    is OnlineLobbyCommand.CreateGame ->
+      flow { emit(lobbyResult { OnlineLobbyMessage.GameReady(repository.createGame(command.timeControl).gameId) }) }
 
     is OnlineLobbyCommand.JoinGame ->
       flow { emit(lobbyResult { repository.joinGame(command.inviteCode).toLobbyMessage() }) }

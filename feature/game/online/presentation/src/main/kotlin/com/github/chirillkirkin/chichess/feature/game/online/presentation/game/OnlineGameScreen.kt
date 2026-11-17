@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -34,6 +35,7 @@ import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -43,9 +45,14 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.github.chirillkirkin.chichess.core.designsystem.theme.ChiChessTheme
 import com.github.chirillkirkin.chichess.feature.game.board.BoardMessage
 import com.github.chirillkirkin.chichess.feature.game.board.BoardState
+import com.github.chirillkirkin.chichess.feature.game.board.BoardWithSidePanel
 import com.github.chirillkirkin.chichess.feature.game.board.ChessBoard
+import com.github.chirillkirkin.chichess.feature.game.clock.ChessClockFace
+import com.github.chirillkirkin.chichess.feature.game.clock.rememberClockRemaining
+import com.github.chirillkirkin.chichess.feature.game.domain.ChessClock
 import com.github.chirillkirkin.chichess.feature.game.domain.PieceColor
 import com.github.chirillkirkin.chichess.feature.game.domain.initialChessPosition
+import com.github.chirillkirkin.chichess.feature.game.domain.opponent
 import com.github.chirillkirkin.chichess.feature.game.online.domain.CommandRejection
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameResult
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameStatus
@@ -54,6 +61,8 @@ import com.github.chirillkirkin.chichess.feature.game.online.presentation.R
 import kotlinx.coroutines.launch
 
 private val ControlsSpace = 128.dp
+private val ClockRowHeight = 56.dp
+private const val SidePanelControlsWeight = 1f
 
 @Composable
 fun OnlineGameRoot(
@@ -108,31 +117,22 @@ fun OnlineGameScreen(state: OnlineGameState, onMessage: (OnlineGameMessage) -> U
 
   Box(modifier = modifier.fillMaxSize()) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-      // Reserve matching space above and below so the board stays centered with the controls right
-      // beneath it; the board is the largest square that fits what is left.
-      val boardSize = minOf(maxWidth, maxHeight - ControlsSpace * 2)
-
-      Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(modifier = Modifier.height(ControlsSpace))
-
-        ChessBoard(
-          state = board,
-          onSquareClick = { onMessage(OnlineGameMessage.Board(BoardMessage.SquareClick(it))) },
-          onPieceDragStart = { onMessage(OnlineGameMessage.Board(BoardMessage.PieceDragStart(it))) },
-          onPieceDrop = { from, to -> onMessage(OnlineGameMessage.Board(BoardMessage.PieceDrop(from, to))) },
-          perspective = state.yourColor ?: PieceColor.WHITE,
-          promotionSquare = state.pendingPromotion?.to,
-          onPromotionSelect = { onMessage(OnlineGameMessage.PromotionSelected(it)) },
-          onPromotionDismiss = { onMessage(OnlineGameMessage.PromotionDismissed) },
-          modifier = Modifier.size(boardSize),
+      if (maxWidth > maxHeight) {
+        OnlineGameLandscapeContent(
+          board = board,
+          state = state,
+          onMessage = onMessage,
+          onCopyInviteCode = onCopyInviteCode,
         )
-
-        Box(
-          modifier = Modifier.size(width = boardSize, height = ControlsSpace),
-          contentAlignment = Alignment.TopCenter,
-        ) {
-          OnlineGameControls(state = state, onMessage = onMessage, onCopyInviteCode = onCopyInviteCode)
-        }
+      } else {
+        OnlineGamePortraitContent(
+          board = board,
+          state = state,
+          onMessage = onMessage,
+          onCopyInviteCode = onCopyInviteCode,
+          maxWidth = maxWidth,
+          maxHeight = maxHeight,
+        )
       }
     }
 
@@ -141,15 +141,157 @@ fun OnlineGameScreen(state: OnlineGameState, onMessage: (OnlineGameMessage) -> U
 }
 
 @Composable
-private fun OnlineGameControls(
+private fun OnlineGameLandscapeContent(
+  board: BoardState,
   state: OnlineGameState,
   onMessage: (OnlineGameMessage) -> Unit,
   onCopyInviteCode: (String) -> Unit,
 ) {
+  val clock = state.clock
+  val yourColor = state.yourColor ?: PieceColor.WHITE
+
+  BoardWithSidePanel(
+    board = { boardModifier ->
+      OnlineChessBoard(board = board, state = state, onMessage = onMessage, modifier = boardModifier)
+    },
+    panel = { panelModifier ->
+      Column(modifier = panelModifier) {
+        if (clock != null) {
+          ClockRow(
+            clock = clock,
+            color = yourColor.opponent,
+            modifier = Modifier.fillMaxWidth().height(ClockRowHeight),
+            clockAlignment = Alignment.CenterStart,
+          )
+        }
+
+        Box(
+          modifier =
+            Modifier
+              .weight(SidePanelControlsWeight)
+              .fillMaxWidth()
+              .padding(horizontal = ChiChessTheme.spacing.small),
+          contentAlignment = Alignment.CenterStart,
+        ) {
+          OnlineGameControls(
+            state = state,
+            onMessage = onMessage,
+            onCopyInviteCode = onCopyInviteCode,
+            horizontalAlignment = Alignment.Start,
+          )
+        }
+
+        if (clock != null) {
+          ClockRow(
+            clock = clock,
+            color = yourColor,
+            modifier = Modifier.fillMaxWidth().height(ClockRowHeight),
+            clockAlignment = Alignment.CenterStart,
+          )
+        }
+      }
+    },
+  )
+}
+
+@Composable
+private fun OnlineGamePortraitContent(
+  board: BoardState,
+  state: OnlineGameState,
+  onMessage: (OnlineGameMessage) -> Unit,
+  onCopyInviteCode: (String) -> Unit,
+  maxWidth: Dp,
+  maxHeight: Dp,
+) {
+  val clock = state.clock
+  val yourColor = state.yourColor ?: PieceColor.WHITE
+  val gap = ChiChessTheme.spacing.small
+
+  // Reserve matching space above and below so the board stays centered with the controls right
+  // beneath it; the board is the largest square that fits what is left.
+  val clockRowsSpace = if (clock != null) (ClockRowHeight + gap) * 2 else 0.dp
+  val boardSize = minOf(maxWidth, (maxHeight - ControlsSpace * 2 - clockRowsSpace).coerceAtLeast(0.dp))
+
+  Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Spacer(modifier = Modifier.height(ControlsSpace))
+
+    if (clock != null) {
+      ClockRow(
+        clock = clock,
+        color = yourColor.opponent,
+        modifier = Modifier.padding(bottom = gap).size(width = boardSize, height = ClockRowHeight),
+      )
+    }
+
+    OnlineChessBoard(
+      board = board,
+      state = state,
+      onMessage = onMessage,
+      modifier = Modifier.size(boardSize),
+    )
+
+    if (clock != null) {
+      ClockRow(
+        clock = clock,
+        color = yourColor,
+        modifier = Modifier.padding(top = gap).size(width = boardSize, height = ClockRowHeight),
+      )
+    }
+
+    Box(
+      modifier = Modifier.size(width = boardSize, height = ControlsSpace),
+      contentAlignment = Alignment.TopCenter,
+    ) {
+      OnlineGameControls(state = state, onMessage = onMessage, onCopyInviteCode = onCopyInviteCode)
+    }
+  }
+}
+
+@Composable
+private fun OnlineChessBoard(
+  board: BoardState,
+  state: OnlineGameState,
+  onMessage: (OnlineGameMessage) -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  ChessBoard(
+    state = board,
+    onSquareClick = { onMessage(OnlineGameMessage.Board(BoardMessage.SquareClick(it))) },
+    onPieceDragStart = { onMessage(OnlineGameMessage.Board(BoardMessage.PieceDragStart(it))) },
+    onPieceDrop = { from, to -> onMessage(OnlineGameMessage.Board(BoardMessage.PieceDrop(from, to))) },
+    perspective = state.yourColor ?: PieceColor.WHITE,
+    promotionSquare = state.pendingPromotion?.to,
+    onPromotionSelect = { onMessage(OnlineGameMessage.PromotionSelected(it)) },
+    onPromotionDismiss = { onMessage(OnlineGameMessage.PromotionDismissed) },
+    modifier = modifier,
+  )
+}
+
+@Composable
+private fun ClockRow(
+  clock: ChessClock,
+  color: PieceColor,
+  modifier: Modifier = Modifier,
+  clockAlignment: Alignment = Alignment.CenterEnd,
+) {
+  val remaining by rememberClockRemaining(clock, color)
+
+  Box(modifier = modifier.padding(horizontal = ChiChessTheme.spacing.small), contentAlignment = clockAlignment) {
+    ChessClockFace(remaining = remaining, isRunning = clock.isRunning && clock.activeSide == color)
+  }
+}
+
+@Composable
+private fun OnlineGameControls(
+  state: OnlineGameState,
+  onMessage: (OnlineGameMessage) -> Unit,
+  onCopyInviteCode: (String) -> Unit,
+  horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
+) {
   val resultText = state.result?.let { resultRes(it, state.terminationReason) }?.let { stringResource(it) }
 
   Column(
-    horizontalAlignment = Alignment.CenterHorizontally,
+    horizontalAlignment = horizontalAlignment,
     verticalArrangement = Arrangement.spacedBy(ChiChessTheme.spacing.medium),
   ) {
     when {
@@ -234,6 +376,8 @@ private fun resultRes(result: OnlineGameResult, reason: OnlineTerminationReason?
 
       OnlineTerminationReason.RESIGNATION -> R.string.online_white_wins_by_resignation
 
+      OnlineTerminationReason.TIMEOUT -> R.string.online_white_wins_on_time
+
       OnlineTerminationReason.STALEMATE,
       OnlineTerminationReason.AGREEMENT,
       OnlineTerminationReason.INSUFFICIENT_MATERIAL,
@@ -241,6 +385,7 @@ private fun resultRes(result: OnlineGameResult, reason: OnlineTerminationReason?
       OnlineTerminationReason.SEVENTY_FIVE_MOVE_RULE,
       OnlineTerminationReason.THREEFOLD_REPETITION,
       OnlineTerminationReason.FIVEFOLD_REPETITION,
+      OnlineTerminationReason.TIMEOUT_VS_INSUFFICIENT_MATERIAL,
       null,
       -> null
     }
@@ -251,6 +396,8 @@ private fun resultRes(result: OnlineGameResult, reason: OnlineTerminationReason?
 
       OnlineTerminationReason.RESIGNATION -> R.string.online_black_wins_by_resignation
 
+      OnlineTerminationReason.TIMEOUT -> R.string.online_black_wins_on_time
+
       OnlineTerminationReason.STALEMATE,
       OnlineTerminationReason.AGREEMENT,
       OnlineTerminationReason.INSUFFICIENT_MATERIAL,
@@ -258,6 +405,7 @@ private fun resultRes(result: OnlineGameResult, reason: OnlineTerminationReason?
       OnlineTerminationReason.SEVENTY_FIVE_MOVE_RULE,
       OnlineTerminationReason.THREEFOLD_REPETITION,
       OnlineTerminationReason.FIVEFOLD_REPETITION,
+      OnlineTerminationReason.TIMEOUT_VS_INSUFFICIENT_MATERIAL,
       null,
       -> null
     }
@@ -278,8 +426,12 @@ private fun resultRes(result: OnlineGameResult, reason: OnlineTerminationReason?
 
       OnlineTerminationReason.SEVENTY_FIVE_MOVE_RULE -> R.string.online_draw_by_seventy_five_move_rule
 
+      OnlineTerminationReason.TIMEOUT_VS_INSUFFICIENT_MATERIAL ->
+        R.string.online_draw_by_timeout_vs_insufficient_material
+
       OnlineTerminationReason.CHECKMATE,
       OnlineTerminationReason.RESIGNATION,
+      OnlineTerminationReason.TIMEOUT,
       null,
       -> null
     }

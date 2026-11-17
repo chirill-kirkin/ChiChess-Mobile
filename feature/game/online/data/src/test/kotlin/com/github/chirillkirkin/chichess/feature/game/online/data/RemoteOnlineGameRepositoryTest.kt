@@ -5,6 +5,7 @@ import com.github.chirillkirkin.chichess.core.data.network.configureChiChessClie
 import com.github.chirillkirkin.chichess.core.data.network.installBearerAuth
 import com.github.chirillkirkin.chichess.feature.game.domain.Fen
 import com.github.chirillkirkin.chichess.feature.game.domain.PieceColor
+import com.github.chirillkirkin.chichess.feature.game.domain.TimeControl
 import com.github.chirillkirkin.chichess.feature.game.online.domain.CreatedGame
 import com.github.chirillkirkin.chichess.feature.game.online.domain.JoinGameResult
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameResult
@@ -23,6 +24,8 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 private const val TOKEN = "test-token"
 private const val GAME_ID = "game-1"
@@ -40,13 +43,41 @@ class RemoteOnlineGameRepositoryTest {
       """{"gameId":"$GAME_ID","inviteCode":"$INVITE_CODE"}""",
     )
 
-    val created = repository.createGame()
+    val created = repository.createGame(timeControl = null)
 
     assertEquals(CreatedGame(gameId = GAME_ID, inviteCode = INVITE_CODE), created)
     val request = requests.single()
     assertEquals(HttpMethod.Post, request.method)
     assertEquals(GAME_PATH, request.path)
     assertEquals("Bearer $TOKEN", request.authorization)
+  }
+
+  @Test
+  fun `createGame sends the time control in seconds`() = runTest {
+    val requests = mutableListOf<RecordedRequest>()
+    val repository = repository(
+      requests,
+      HttpStatusCode.Created,
+      """{"gameId":"$GAME_ID","inviteCode":"$INVITE_CODE"}""",
+    )
+
+    repository.createGame(TimeControl(initial = 5.minutes, increment = 3.seconds))
+
+    assertEquals("""{"timeControl":{"initialSeconds":300,"incrementSeconds":3}}""", requests.single().body)
+  }
+
+  @Test
+  fun `createGame without a clock sends a null time control`() = runTest {
+    val requests = mutableListOf<RecordedRequest>()
+    val repository = repository(
+      requests,
+      HttpStatusCode.Created,
+      """{"gameId":"$GAME_ID","inviteCode":"$INVITE_CODE"}""",
+    )
+
+    repository.createGame(timeControl = null)
+
+    assertEquals("""{"timeControl":null}""", requests.single().body)
   }
 
   @Test

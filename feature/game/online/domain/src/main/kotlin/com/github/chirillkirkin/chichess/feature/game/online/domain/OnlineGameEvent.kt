@@ -19,12 +19,14 @@ sealed interface OnlineGameEvent {
     val lastMove: ChessMove?,
     val result: OnlineGameResult?,
     val terminationReason: OnlineTerminationReason?,
+    val clock: ClockReading? = null,
   ) : OnlineGameEvent
 
   data class GameFinished(
     val revision: Long,
     val result: OnlineGameResult,
     val terminationReason: OnlineTerminationReason,
+    val clock: ClockReading? = null,
   ) : OnlineGameEvent
 
   data class DrawOffered(val by: PieceColor) : OnlineGameEvent

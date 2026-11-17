@@ -38,6 +38,7 @@ dependencies {
   implementation(project(":core:designsystem"))
   implementation(project(":feature:game:online:domain"))
   implementation(project(":feature:game:board"))
+  implementation(project(":feature:game:clock"))
   implementation(project(":feature:game:domain"))
   implementation(project(":mvu:core"))
   implementation(project(":mvu:android-savedstate"))

@@ -91,6 +91,7 @@ internal data class MoveAppliedEvent(
   val lastMove: String,
   val result: ApiGameResult? = null,
   val terminationReason: ApiTerminationReason? = null,
+  val clock: ClockDto? = null,
 ) : GameEvent
 
 @Serializable
@@ -100,6 +101,7 @@ internal data class GameFinishedEvent(
   val status: ApiGameStatus,
   val result: ApiGameResult,
   val terminationReason: ApiTerminationReason,
+  val clock: ClockDto? = null,
 ) : GameEvent
 
 @Serializable

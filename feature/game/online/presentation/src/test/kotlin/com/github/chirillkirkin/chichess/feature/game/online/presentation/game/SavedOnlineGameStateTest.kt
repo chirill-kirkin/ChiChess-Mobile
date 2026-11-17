@@ -8,6 +8,7 @@ import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameSn
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.time.TestTimeSource
 
 private const val GAME_ID = "game-1"
 private const val INVITE_CODE = "INV0000000"
@@ -19,7 +20,7 @@ class SavedOnlineGameStateTest {
 
   @Test
   fun `saves the confirmed game and restores a rendered board`() {
-    val update = onlineGameUpdate(engine) { "cmd" }
+    val update = onlineGameUpdate(engine, TestTimeSource()) { "cmd" }
     val connected = update(snapshotMessage(), OnlineGameState(GAME_ID)).state
 
     val restored = OnlineGameState(GAME_ID).restoredFrom(connected.toSavedOnlineGame(), engine)
