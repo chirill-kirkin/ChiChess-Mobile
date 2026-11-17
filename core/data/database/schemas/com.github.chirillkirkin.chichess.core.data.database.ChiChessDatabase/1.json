@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "b15ab2620dc1686880c996f919803f4a",
+    "identityHash": "9aea5504de7ea09b7287181ef224e954",
     "entities": [
       {
         "tableName": "offline_game",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `draw_reason` TEXT, `board_layout` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `draw_reason` TEXT, `board_layout` TEXT NOT NULL, `initial_ms` INTEGER, `increment_ms` INTEGER, `white_remaining_ms` INTEGER, `black_remaining_ms` INTEGER, `flagged_side` TEXT, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -24,6 +24,31 @@
             "columnName": "board_layout",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "initialMs",
+            "columnName": "initial_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "incrementMs",
+            "columnName": "increment_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "whiteRemainingMs",
+            "columnName": "white_remaining_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "blackRemainingMs",
+            "columnName": "black_remaining_ms",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "flaggedSide",
+            "columnName": "flagged_side",
+            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
@@ -80,7 +105,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b15ab2620dc1686880c996f919803f4a')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9aea5504de7ea09b7287181ef224e954')"
     ]
   }
 }

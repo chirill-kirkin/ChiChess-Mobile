@@ -15,6 +15,11 @@ data class OfflineGameEntity(
   @PrimaryKey val id: Long = CURRENT_OFFLINE_GAME_ID,
   @ColumnInfo(name = "draw_reason") val drawReason: String?,
   @ColumnInfo(name = "board_layout") val boardLayout: String,
+  @ColumnInfo(name = "initial_ms") val initialMs: Long? = null,
+  @ColumnInfo(name = "increment_ms") val incrementMs: Long? = null,
+  @ColumnInfo(name = "white_remaining_ms") val whiteRemainingMs: Long? = null,
+  @ColumnInfo(name = "black_remaining_ms") val blackRemainingMs: Long? = null,
+  @ColumnInfo(name = "flagged_side") val flaggedSide: String? = null,
 )
 
 @Entity(

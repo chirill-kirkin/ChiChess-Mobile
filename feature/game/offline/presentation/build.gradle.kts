@@ -36,10 +36,12 @@ kotlin {
 dependencies {
   implementation(project(":core:designsystem"))
   implementation(project(":feature:game:board"))
+  implementation(project(":feature:game:clock"))
   implementation(project(":feature:game:domain"))
   implementation(project(":feature:game:offline:domain"))
   implementation(project(":mvu:core"))
 
+  implementation(libs.androidx.activity.compose)
   implementation(platform(libs.androidx.compose.bom))
   implementation(libs.androidx.compose.foundation)
   implementation(libs.androidx.compose.material3)

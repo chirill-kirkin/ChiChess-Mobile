@@ -7,13 +7,18 @@ import com.github.chirillkirkin.chichess.feature.game.domain.ChessFile
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessMove
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessRank
 import com.github.chirillkirkin.chichess.feature.game.domain.DrawReason
+import com.github.chirillkirkin.chichess.feature.game.domain.PieceColor
 import com.github.chirillkirkin.chichess.feature.game.domain.PromotionPiece
 import com.github.chirillkirkin.chichess.feature.game.domain.Square
+import com.github.chirillkirkin.chichess.feature.game.domain.TimeControl
 import com.github.chirillkirkin.chichess.feature.game.offline.domain.OfflineBoardLayout
+import com.github.chirillkirkin.chichess.feature.game.offline.domain.OfflineClock
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 class OfflineGameMapperTest {
   @Test
@@ -63,6 +68,36 @@ class OfflineGameMapperTest {
   @Test
   fun `maps a missing draw reason to null`() {
     assertNull(gameWithMoves().toSnapshot().drawReason)
+  }
+
+  @Test
+  fun `maps the stored clock and flag`() {
+    val snapshot = OfflineGameWithMoves(
+      game = OfflineGameEntity(
+        drawReason = null,
+        boardLayout = OfflineBoardLayout.STANDARD.name,
+        initialMs = 5.minutes.inWholeMilliseconds,
+        incrementMs = 3.seconds.inWholeMilliseconds,
+        whiteRemainingMs = 4.minutes.inWholeMilliseconds,
+        blackRemainingMs = 3.minutes.inWholeMilliseconds,
+        flaggedSide = PieceColor.BLACK.name,
+      ),
+      moves = emptyList(),
+    ).toSnapshot()
+
+    assertEquals(
+      OfflineClock(TimeControl(initial = 5.minutes, increment = 3.seconds), 4.minutes, 3.minutes),
+      snapshot.clock,
+    )
+    assertEquals(PieceColor.BLACK, snapshot.flaggedSide)
+  }
+
+  @Test
+  fun `maps a game without a time control to no clock`() {
+    val snapshot = gameWithMoves().toSnapshot()
+
+    assertNull(snapshot.clock)
+    assertNull(snapshot.flaggedSide)
   }
 
   @Test

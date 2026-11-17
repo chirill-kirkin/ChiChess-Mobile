@@ -8,19 +8,23 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import com.github.chirillkirkin.chichess.core.designsystem.theme.ChiChessTheme
+import com.github.chirillkirkin.chichess.feature.game.clock.TimeControlPicker
+import com.github.chirillkirkin.chichess.feature.game.clock.rememberTimeControlState
+import com.github.chirillkirkin.chichess.feature.game.domain.TimeControl
 import com.github.chirillkirkin.chichess.feature.game.offline.domain.OfflineBoardLayout
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,6 +38,8 @@ internal fun OfflineGameSettingsSheet(
 ) {
   ModalBottomSheet(
     onDismissRequest = onDismiss,
+    // In landscape a half-open sheet would hide its own actions.
+    sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     modifier = modifier,
   ) {
     Column(
@@ -90,24 +96,43 @@ private fun BoardLayoutOption(
   }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun NewGameConfirmationDialog(onConfirm: () -> Unit, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
-  AlertDialog(
+internal fun NewGameSheet(
+  initialTimeControl: TimeControl?,
+  onPlayClick: (TimeControl?) -> Unit,
+  onDismiss: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  var timeControl by rememberTimeControlState(initialTimeControl)
+
+  ModalBottomSheet(
     onDismissRequest = onDismiss,
-    confirmButton = {
-      TextButton(onClick = onConfirm) {
-        Text(stringResource(R.string.new_game))
-      }
-    },
+    // In landscape a half-open sheet would hide its own actions.
+    sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     modifier = modifier,
-    dismissButton = {
-      TextButton(onClick = onDismiss) {
-        Text(stringResource(R.string.cancel))
+  ) {
+    Column(
+      modifier =
+        Modifier
+          .fillMaxWidth()
+          .padding(horizontal = ChiChessTheme.spacing.medium)
+          .padding(bottom = ChiChessTheme.spacing.medium),
+      verticalArrangement = Arrangement.spacedBy(ChiChessTheme.spacing.medium),
+    ) {
+      TimeControlPicker(
+        timeControl = timeControl,
+        onTimeControlChange = { timeControl = it },
+      )
+
+      Button(
+        onClick = { onPlayClick(timeControl) },
+        modifier = Modifier.fillMaxWidth(),
+      ) {
+        Text(stringResource(R.string.play))
       }
-    },
-    title = { Text(stringResource(R.string.new_game_confirmation_title)) },
-    text = { Text(stringResource(R.string.new_game_confirmation_text)) },
-  )
+    }
+  }
 }
 
 @StringRes

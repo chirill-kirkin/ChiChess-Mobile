@@ -19,7 +19,7 @@
     <string name="board_layout_standard">Стандартно</string>
     <string name="board_layout_black_upside_down">Чёрные фигуры вверх ногами</string>
     <string name="board_layout_flip_after_move">Переворачивать фигуры после каждого хода</string>
-    <string name="new_game_confirmation_title">Начать новую партию?</string>
-    <string name="new_game_confirmation_text">Текущая партия будет потеряна.</string>
-    <string name="cancel">Отмена</string>
+    <string name="play">Играть</string>
+    <string name="pause_clock">Поставить часы на паузу</string>
+    <string name="resume_clock">Запустить часы</string>
 </resources>

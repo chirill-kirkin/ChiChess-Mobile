@@ -24,9 +24,11 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.TestTimeSource
 
 class OfflineGameUpdateTest {
-  private val update = offlineGameUpdate(ChesslibGameEngine())
+  private val timeSource = TestTimeSource()
+  private val update = offlineGameUpdate(ChesslibGameEngine(), timeSource)
   private val promotionFrom = Square(ChessFile.A, ChessRank.SEVEN)
   private val promotionTo = Square(ChessFile.A, ChessRank.EIGHT)
 
@@ -86,7 +88,7 @@ class OfflineGameUpdateTest {
         override fun applyMove(position: ChessPosition, move: ChessMove): MoveApplicationResult =
           error("This test only selects pieces")
       }
-    val reducer = offlineGameUpdate(fakeEngine)
+    val reducer = offlineGameUpdate(fakeEngine, timeSource)
 
     val firstSelection = OfflineGameState().reduceBoardClick(firstPiece, reducer)
     val secondSelection = firstSelection.reduceBoardClick(secondPiece, reducer)
@@ -137,7 +139,10 @@ class OfflineGameUpdateTest {
     assertEquals(draggedState.board.position[origin], result.state.board.position[destination])
     assertNull(result.state.board.selectedSquare)
     assertEquals(emptySet(), result.state.board.legalTargets)
-    assertEquals(listOf(OfflineGameCommand.AppendMove(0, ChessMove(origin, destination))), result.commands)
+    assertEquals(
+      listOf(OfflineGameCommand.AppendMove(0, ChessMove(origin, destination), clock = null)),
+      result.commands,
+    )
   }
 
   @Test
@@ -324,7 +329,7 @@ class OfflineGameUpdateTest {
       OfflineGameState(boardLayout = OfflineBoardLayout.BLACK_UPSIDE_DOWN)
         .reduceMove(Square(ChessFile.E, ChessRank.TWO), Square(ChessFile.E, ChessRank.FOUR))
 
-    val newGameState = playedState.reduceMessage(OfflineGameMessage.NewGame)
+    val newGameState = playedState.reduceMessage(OfflineGameMessage.NewGame(timeControl = null))
 
     assertEquals(OfflineGameState(boardLayout = OfflineBoardLayout.BLACK_UPSIDE_DOWN), newGameState)
   }
@@ -339,7 +344,7 @@ class OfflineGameUpdateTest {
     val moveCommands = update(boardClick(destination), selectedState).commands
 
     assertEquals(emptyList(), selectionCommands)
-    assertEquals(listOf(OfflineGameCommand.AppendMove(0, ChessMove(origin, destination))), moveCommands)
+    assertEquals(listOf(OfflineGameCommand.AppendMove(0, ChessMove(origin, destination), clock = null)), moveCommands)
   }
 
   @Test
@@ -352,7 +357,9 @@ class OfflineGameUpdateTest {
     val commands = update(OfflineGameMessage.PromotionSelected(PromotionPiece.KNIGHT), pendingState).commands
 
     assertEquals(
-      listOf(OfflineGameCommand.AppendMove(0, ChessMove(promotionFrom, promotionTo, PromotionPiece.KNIGHT))),
+      listOf(
+        OfflineGameCommand.AppendMove(0, ChessMove(promotionFrom, promotionTo, PromotionPiece.KNIGHT), clock = null),
+      ),
       commands,
     )
   }
@@ -367,11 +374,17 @@ class OfflineGameUpdateTest {
         OfflineGameState(claimableDrawReason = DrawReason.THREEFOLD_REPETITION),
       ).commands
     val newGameCommands =
-      update(OfflineGameMessage.NewGame, OfflineGameState(boardLayout = OfflineBoardLayout.BLACK_UPSIDE_DOWN)).commands
+      update(
+        OfflineGameMessage.NewGame(timeControl = null),
+        OfflineGameState(boardLayout = OfflineBoardLayout.BLACK_UPSIDE_DOWN),
+      ).commands
 
     assertEquals(listOf(OfflineGameCommand.UpdateBoardLayout(OfflineBoardLayout.FLIP_AFTER_MOVE)), layoutCommands)
     assertEquals(listOf(OfflineGameCommand.UpdateDrawReason(DrawReason.THREEFOLD_REPETITION)), drawCommands)
-    assertEquals(listOf(OfflineGameCommand.StartNewGame(OfflineBoardLayout.BLACK_UPSIDE_DOWN)), newGameCommands)
+    assertEquals(
+      listOf(OfflineGameCommand.StartNewGame(OfflineBoardLayout.BLACK_UPSIDE_DOWN, timeControl = null)),
+      newGameCommands,
+    )
   }
 
   @Test
@@ -389,7 +402,10 @@ class OfflineGameUpdateTest {
     val result = update(OfflineGameMessage.GameLoaded(null), OfflineGameState(isLoading = true))
 
     assertEquals(OfflineGameState(), result.state)
-    assertEquals(listOf(OfflineGameCommand.StartNewGame(OfflineBoardLayout.STANDARD)), result.commands)
+    assertEquals(
+      listOf(OfflineGameCommand.StartNewGame(OfflineBoardLayout.STANDARD, timeControl = null)),
+      result.commands,
+    )
   }
 
   @Test

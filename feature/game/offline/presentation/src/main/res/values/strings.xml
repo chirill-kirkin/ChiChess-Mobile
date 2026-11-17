@@ -19,7 +19,7 @@
     <string name="board_layout_standard">Standard</string>
     <string name="board_layout_black_upside_down">Black pieces upside down</string>
     <string name="board_layout_flip_after_move">Flip pieces after each move</string>
-    <string name="new_game_confirmation_title">Start a new game?</string>
-    <string name="new_game_confirmation_text">The current game will be lost.</string>
-    <string name="cancel">Cancel</string>
+    <string name="play">Play</string>
+    <string name="pause_clock">Pause the clock</string>
+    <string name="resume_clock">Resume the clock</string>
 </resources>
