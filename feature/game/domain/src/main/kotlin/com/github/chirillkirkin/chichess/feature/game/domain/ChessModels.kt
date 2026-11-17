@@ -5,6 +5,12 @@ enum class PieceColor {
   BLACK,
 }
 
+val PieceColor.opponent: PieceColor
+  get() = when (this) {
+    PieceColor.WHITE -> PieceColor.BLACK
+    PieceColor.BLACK -> PieceColor.WHITE
+  }
+
 @JvmInline
 value class Fen(val value: String)
 
@@ -61,6 +67,17 @@ data class Square(val file: ChessFile, val rank: ChessRank) {
       } else {
         SquareColor.LIGHT
       }
+
+  companion object {
+    val entries: List<Square> = ChessRank.entries.flatMap { rank ->
+      ChessFile.entries.map { file ->
+        Square(
+          file,
+          rank,
+        )
+      }
+    }
+  }
 }
 
 data class ChessMove(val from: Square, val to: Square, val promotion: PromotionPiece? = null)
