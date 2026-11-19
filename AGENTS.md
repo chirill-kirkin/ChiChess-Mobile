@@ -14,7 +14,7 @@
 ## Module structure
 
 - `:app` is the composition root. It owns application setup, app-level resources, dependency-injection wiring, and Navigation 3 wiring.
-- `:mvu:core` is the platform-independent MVU runtime. `:mvu:android-savedstate` adds optional Android saved-state support.
+- The MVU runtime comes from the external ChElm library: `io.github.chirill-kirkin:chelm-core` (platform-independent) and `io.github.chirill-kirkin:chelm-savedstate` (saved-state support). Both are declared in `gradle/libs.versions.toml`.
 - `:core:domain` contains domain concepts shared by unrelated features.
 - `:core:data` contains shared data-layer integration. `:core:data:network` and `:core:data:database` contain reusable network and database infrastructure.
 - `:core:designsystem` owns the application theme, shared colors, typography, spacing, reusable UI components, and shared drawable resources.

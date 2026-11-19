@@ -16,9 +16,9 @@ import com.github.chirillkirkin.chichess.feature.game.online.domain.ClockReading
 import com.github.chirillkirkin.chichess.feature.game.online.domain.CommandRejection
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameEvent
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameStatus
-import com.github.chirillkirkin.mvu.Update
-import com.github.chirillkirkin.mvu.UpdateDsl
-import com.github.chirillkirkin.mvu.update
+import io.github.chirillkirkin.chelm.Update
+import io.github.chirillkirkin.chelm.UpdateDsl
+import io.github.chirillkirkin.chelm.update
 import kotlin.time.ComparableTimeMark
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds

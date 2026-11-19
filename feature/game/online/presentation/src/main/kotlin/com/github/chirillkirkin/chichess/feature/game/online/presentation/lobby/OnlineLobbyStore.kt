@@ -2,11 +2,11 @@ package com.github.chirillkirkin.chichess.feature.game.online.presentation.lobby
 
 import com.github.chirillkirkin.chichess.feature.game.online.domain.JoinGameResult
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameRepository
-import com.github.chirillkirkin.mvu.CommandExecutor
-import com.github.chirillkirkin.mvu.MVUStore
-import com.github.chirillkirkin.mvu.Update
-import com.github.chirillkirkin.mvu.update
 import dagger.hilt.android.scopes.ViewModelScoped
+import io.github.chirillkirkin.chelm.CommandExecutor
+import io.github.chirillkirkin.chelm.MVUStore
+import io.github.chirillkirkin.chelm.Update
+import io.github.chirillkirkin.chelm.update
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flow

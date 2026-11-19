@@ -19,7 +19,7 @@ import com.github.chirillkirkin.chichess.feature.game.domain.Square
 import com.github.chirillkirkin.chichess.feature.game.engine.ChesslibGameEngine
 import com.github.chirillkirkin.chichess.feature.game.offline.domain.OfflineBoardLayout
 import com.github.chirillkirkin.chichess.feature.game.offline.domain.OfflineGameSnapshot
-import com.github.chirillkirkin.mvu.Update
+import io.github.chirillkirkin.chelm.Update
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

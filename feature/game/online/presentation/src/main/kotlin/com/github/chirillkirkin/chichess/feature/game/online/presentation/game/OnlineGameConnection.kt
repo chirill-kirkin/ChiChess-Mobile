@@ -6,10 +6,10 @@ import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameCh
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameConnectionException
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameEvent
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameSession
-import com.github.chirillkirkin.mvu.CommandExecutor
-import com.github.chirillkirkin.mvu.Subscription
-import com.github.chirillkirkin.mvu.savedstate.SavedStateMVU
-import com.github.chirillkirkin.mvu.savedstate.mvuStore
+import io.github.chirillkirkin.chelm.CommandExecutor
+import io.github.chirillkirkin.chelm.Subscription
+import io.github.chirillkirkin.chelm.savedstate.SavedStateMVU
+import io.github.chirillkirkin.chelm.savedstate.mvuStore
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay

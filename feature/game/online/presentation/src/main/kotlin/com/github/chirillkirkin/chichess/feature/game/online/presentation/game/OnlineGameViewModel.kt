@@ -7,11 +7,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.chirillkirkin.chichess.feature.game.domain.ChessGameEngine
 import com.github.chirillkirkin.chichess.feature.game.online.domain.OnlineGameChannel
-import com.github.chirillkirkin.mvu.MVU
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.chirillkirkin.chelm.MVU
 import kotlinx.coroutines.flow.map
 import kotlin.time.TimeSource
 

@@ -2,8 +2,8 @@ package com.github.chirillkirkin.chichess.feature.game.online.presentation.lobby
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.chirillkirkin.mvu.MVU
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.chirillkirkin.chelm.MVU
 import javax.inject.Inject
 
 @HiltViewModel

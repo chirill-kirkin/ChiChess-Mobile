@@ -62,7 +62,7 @@ dependencies {
   implementation(project(":core:data"))
   implementation(project(":core:data:network"))
   implementation(project(":core:data:database"))
-  implementation(project(":mvu:core"))
+  implementation(libs.chelm.core)
 
   // Feature modules
   implementation(project(":feature:game:domain"))

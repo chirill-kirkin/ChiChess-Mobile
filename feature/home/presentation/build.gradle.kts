@@ -29,7 +29,7 @@ kotlin {
 
 dependencies {
   implementation(project(":core:designsystem"))
-  implementation(project(":mvu:core"))
+  implementation(libs.chelm.core)
 
   implementation(platform(libs.androidx.compose.bom))
   implementation(libs.androidx.compose.foundation)

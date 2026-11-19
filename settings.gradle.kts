@@ -32,8 +32,6 @@ plugins {
 
 rootProject.name = "ChiChess"
 include(":app")
-include(":mvu:core")
-include(":mvu:android-savedstate")
 include(":core:domain")
 include(":core:data")
 include(":core:data:network")

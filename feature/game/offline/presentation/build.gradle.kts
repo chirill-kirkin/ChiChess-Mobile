@@ -39,7 +39,7 @@ dependencies {
   implementation(project(":feature:game:clock"))
   implementation(project(":feature:game:domain"))
   implementation(project(":feature:game:offline:domain"))
-  implementation(project(":mvu:core"))
+  implementation(libs.chelm.core)
 
   implementation(libs.androidx.activity.compose)
   implementation(platform(libs.androidx.compose.bom))

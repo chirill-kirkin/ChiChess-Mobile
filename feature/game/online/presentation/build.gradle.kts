@@ -40,8 +40,8 @@ dependencies {
   implementation(project(":feature:game:board"))
   implementation(project(":feature:game:clock"))
   implementation(project(":feature:game:domain"))
-  implementation(project(":mvu:core"))
-  implementation(project(":mvu:android-savedstate"))
+  implementation(libs.chelm.core)
+  implementation(libs.chelm.savedstate)
 
   implementation(libs.androidx.lifecycle.viewmodel.savedstate)
   implementation(libs.androidx.lifecycle.process)
